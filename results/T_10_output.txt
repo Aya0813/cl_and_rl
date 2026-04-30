@@ -1,0 +1,1570 @@
+
+
+######## Seed=11 Episode=0 | Curriculum ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Curriculum ===
+Validation loss: 1.004528
+Batch loss: 0.666221
+Validation loss: 0.921696
+Reward: 0.082832
+Current bucket probabilities after update: [0.19047619047619047, 0.19047619047619047, 0.21428571428571427, 0.19047619047619047, 0.21428571428571427]
+Avg loss per bucket:
+  2: 0.289213
+  4: 0.234744
+Change in loss per bucket:
+  2: 0.000000
+  4: 0.000000
+Train loss: 0.666221
+Val loss before: 1.004528
+Val loss after: 0.921696
+Validation curve point -> loss: 1.010372, acc: 0.001359
+Reward: 0.082832
+Step time: 6.54s
+
+=== Step 2/10 | Curriculum ===
+Validation loss: 0.776396
+Batch loss: 0.781224
+Validation loss: 0.742022
+Reward: 0.034375
+Current bucket probabilities after update: [0.18140589569161, 0.18140589569161, 0.2517006802721089, 0.18140589569161, 0.20408163265306126]
+Avg loss per bucket:
+  2: 0.447522
+Change in loss per bucket:
+  2: 0.047493
+Train loss: 0.781224
+Val loss before: 0.776396
+Val loss after: 0.742022
+Validation curve point -> loss: 0.979855, acc: 0.001359
+Reward: 0.034375
+Step time: 5.76s
+
+=== Step 3/10 | Curriculum ===
+Validation loss: 0.994829
+Batch loss: 0.710619
+Validation loss: 1.003550
+Reward: -0.008721
+Current bucket probabilities after update: [0.19095357441222102, 0.1646377849385368, 0.26494808449695667, 0.1646377849385368, 0.21482277121374863]
+Avg loss per bucket:
+  1: 0.416470
+  3: nan
+Change in loss per bucket:
+  1: 0.000000
+  3: nan
+Train loss: 0.710619
+Val loss before: 0.994829
+Val loss after: 1.003550
+Validation curve point -> loss: 0.987737, acc: 0.001359
+Reward: -0.008721
+Step time: 5.08s
+
+=== Step 4/10 | Curriculum ===
+Validation loss: 1.001036
+Batch loss: 1.154644
+Validation loss: 1.005798
+Reward: -0.004762
+Current bucket probabilities after update: [0.17468797306549583, 0.17330293151424928, 0.2788927205231123, 0.17330293151424928, 0.19981344338289328]
+Avg loss per bucket:
+  0: 0.747501
+  4: 0.941223
+Change in loss per bucket:
+  0: 0.000000
+  4: 0.211944
+Train loss: 1.154644
+Val loss before: 1.001036
+Val loss after: 1.005798
+Validation curve point -> loss: 0.988694, acc: 0.001359
+Reward: -0.004762
+Step time: 7.92s
+
+=== Step 5/10 | Curriculum ===
+Validation loss: 0.726446
+Batch loss: 0.780769
+Validation loss: 0.725257
+Reward: 0.001188
+Current bucket probabilities after update: [0.16636949815761506, 0.1650504109659517, 0.28942163859344033, 0.1650504109659517, 0.2141080413170412]
+Avg loss per bucket:
+  2: 0.665728
+  4: 0.626581
+Change in loss per bucket:
+  2: 0.098707
+  4: 0.053968
+Train loss: 0.780769
+Val loss before: 0.726446
+Val loss after: 0.725257
+Validation curve point -> loss: 0.988563, acc: 0.001359
+Reward: 0.001188
+Step time: 14.03s
+
+=== Step 6/10 | Curriculum ===
+Validation loss: 0.723188
+Batch loss: 0.701896
+Validation loss: 0.711452
+Reward: 0.011736
+Current bucket probabilities after update: [0.15844714110249053, 0.18100039139614443, 0.2994491796128003, 0.15719086758662065, 0.20391242030194398]
+Avg loss per bucket:
+  1: 0.947433
+  2: 0.411270
+Change in loss per bucket:
+  1: 0.159289
+  2: -0.007243
+Train loss: 0.701896
+Val loss before: 0.723188
+Val loss after: 0.711452
+Validation curve point -> loss: 0.982239, acc: 0.001359
+Reward: 0.011736
+Step time: 28.39s
+
+=== Step 7/10 | Curriculum ===
+Validation loss: 0.774611
+Batch loss: 0.658272
+Validation loss: 0.763428
+Reward: 0.011183
+Current bucket probabilities after update: [0.1509020391452291, 0.1723813251391852, 0.30899921867885755, 0.14970558817773397, 0.2180118288589943]
+Avg loss per bucket:
+  2: 0.502377
+  4: 0.599462
+Change in loss per bucket:
+  2: 0.022262
+  4: 0.029642
+Train loss: 0.658272
+Val loss before: 0.774611
+Val loss after: 0.763428
+Validation curve point -> loss: 0.974974, acc: 0.001359
+Reward: 0.011183
+Step time: 11.73s
+
+=== Step 8/10 | Curriculum ===
+Validation loss: 0.776425
+Batch loss: 0.640538
+Validation loss: 0.770849
+Reward: 0.005576
+Current bucket probabilities after update: [0.14371622775736104, 0.18798221441827162, 0.31809449397986433, 0.1425767506454609, 0.20763031319904218]
+Avg loss per bucket:
+  1: 0.701851
+  2: 0.358506
+Change in loss per bucket:
+  1: 0.037828
+  2: -0.027578
+Train loss: 0.640538
+Val loss before: 0.776425
+Val loss after: 0.770849
+Validation curve point -> loss: 0.973912, acc: 0.001359
+Reward: 0.005576
+Step time: 18.98s
+
+=== Step 9/10 | Curriculum ===
+Validation loss: 0.760681
+Batch loss: 0.929465
+Validation loss: 0.761503
+Reward: -0.000821
+Current bucket probabilities after update: [0.12496445027090634, 0.19787601517712797, 0.3348363094524887, 0.12376500067943252, 0.21855822442004436]
+Avg loss per bucket:
+  0: 0.698554
+  3: 0.873132
+Change in loss per bucket:
+  0: -0.014684
+  3: nan
+Train loss: 0.929465
+Val loss before: 0.760681
+Val loss after: 0.761503
+Validation curve point -> loss: 0.972931, acc: 0.001359
+Reward: -0.000821
+Step time: 5.86s
+
+=== Step 10/10 | Curriculum ===
+Validation loss: 0.657128
+Batch loss: 0.639528
+Validation loss: 0.656646
+Reward: 0.000482
+Current bucket probabilities after update: [0.11901376216276796, 0.18845334778774095, 0.3188917232880845, 0.11787142921850717, 0.25576973754289944]
+Avg loss per bucket:
+  4: 0.544070
+Change in loss per bucket:
+  4: 0.004132
+Train loss: 0.639528
+Val loss before: 0.657128
+Val loss after: 0.656646
+Validation curve point -> loss: 0.973371, acc: 0.001359
+Reward: 0.000482
+Step time: 5.70s
+
+Validation loss curve (loss vs steps):
+  step 1: 1.010372
+  step 2: 0.979855
+  step 3: 0.987737
+  step 4: 0.988694
+  step 5: 0.988563
+  step 6: 0.982239
+  step 7: 0.974974
+  step 8: 0.973912
+  step 9: 0.972931
+  step 10: 0.973371
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.001359
+  step 2: 0.001359
+  step 3: 0.001359
+  step 4: 0.001359
+  step 5: 0.001359
+  step 6: 0.001359
+  step 7: 0.001359
+  step 8: 0.001359
+  step 9: 0.001359
+  step 10: 0.001359
+
+Reward over time:
+  step 1: 0.082832
+  step 2: 0.034375
+  step 3: -0.008721
+  step 4: -0.004762
+  step 5: 0.001188
+  step 6: 0.011736
+  step 7: 0.011183
+  step 8: 0.005576
+  step 9: -0.000821
+  step 10: 0.000482
+
+Teacher bucket probabilities over time:
+  step 1: [0.19047619047619047, 0.19047619047619047, 0.21428571428571427, 0.19047619047619047, 0.21428571428571427]
+  step 2: [0.18140589569161, 0.18140589569161, 0.2517006802721089, 0.18140589569161, 0.20408163265306126]
+  step 3: [0.19095357441222102, 0.1646377849385368, 0.26494808449695667, 0.1646377849385368, 0.21482277121374863]
+  step 4: [0.17468797306549583, 0.17330293151424928, 0.2788927205231123, 0.17330293151424928, 0.19981344338289328]
+  step 5: [0.16636949815761506, 0.1650504109659517, 0.28942163859344033, 0.1650504109659517, 0.2141080413170412]
+  step 6: [0.15844714110249053, 0.18100039139614443, 0.2994491796128003, 0.15719086758662065, 0.20391242030194398]
+  step 7: [0.1509020391452291, 0.1723813251391852, 0.30899921867885755, 0.14970558817773397, 0.2180118288589943]
+  step 8: [0.14371622775736104, 0.18798221441827162, 0.31809449397986433, 0.1425767506454609, 0.20763031319904218]
+  step 9: [0.12496445027090634, 0.19787601517712797, 0.3348363094524887, 0.12376500067943252, 0.21855822442004436]
+  step 10: [0.11901376216276796, 0.18845334778774095, 0.3188917232880845, 0.11787142921850717, 0.25576973754289944]
+
+Step times:
+  step 1: 6.54s
+  step 2: 5.76s
+  step 3: 5.08s
+  step 4: 7.92s
+  step 5: 14.03s
+  step 6: 28.39s
+  step 7: 11.73s
+  step 8: 18.98s
+  step 9: 5.86s
+  step 10: 5.70s
+
+Final held-out test loss: 0.852581
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 9
+
+
+######## Seed=11 Episode=0 | Baseline ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Baseline ===
+Validation loss: 1.004528
+Batch loss: 0.666221
+Validation loss: 0.921696
+Reward: 0.082832
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.289213
+  4: 0.234744
+Change in loss per bucket:
+  2: 0.000000
+  4: 0.000000
+Train loss: 0.666221
+Val loss before: 1.004528
+Val loss after: 0.921696
+Validation curve point -> loss: 1.010372, acc: 0.001359
+Reward: 0.082832
+Step time: 5.09s
+
+=== Step 2/10 | Baseline ===
+Validation loss: 0.776396
+Batch loss: 0.781224
+Validation loss: 0.742022
+Reward: 0.034375
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.447522
+Change in loss per bucket:
+  2: 0.047493
+Train loss: 0.781224
+Val loss before: 0.776396
+Val loss after: 0.742022
+Validation curve point -> loss: 0.979855, acc: 0.001359
+Reward: 0.034375
+Step time: 6.38s
+
+=== Step 3/10 | Baseline ===
+Validation loss: 0.994829
+Batch loss: 0.710619
+Validation loss: 1.003550
+Reward: -0.008721
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.416470
+  3: nan
+Change in loss per bucket:
+  1: 0.000000
+  3: nan
+Train loss: 0.710619
+Val loss before: 0.994829
+Val loss after: 1.003550
+Validation curve point -> loss: 0.987737, acc: 0.001359
+Reward: -0.008721
+Step time: 5.84s
+
+=== Step 4/10 | Baseline ===
+Validation loss: 1.001036
+Batch loss: 1.154644
+Validation loss: 1.005798
+Reward: -0.004762
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.747501
+  4: 0.941223
+Change in loss per bucket:
+  0: 0.000000
+  4: 0.211944
+Train loss: 1.154644
+Val loss before: 1.001036
+Val loss after: 1.005798
+Validation curve point -> loss: 0.988694, acc: 0.001359
+Reward: -0.004762
+Step time: 10.77s
+
+=== Step 5/10 | Baseline ===
+Validation loss: 0.726446
+Batch loss: 0.780769
+Validation loss: 0.725257
+Reward: 0.001188
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.665728
+  4: 0.626581
+Change in loss per bucket:
+  2: 0.098707
+  4: 0.053968
+Train loss: 0.780769
+Val loss before: 0.726446
+Val loss after: 0.725257
+Validation curve point -> loss: 0.988563, acc: 0.001359
+Reward: 0.001188
+Step time: 8.81s
+
+=== Step 6/10 | Baseline ===
+Validation loss: 0.723188
+Batch loss: 0.740866
+Validation loss: 0.718864
+Reward: 0.004324
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.694904
+Change in loss per bucket:
+  1: 0.083530
+Train loss: 0.740866
+Val loss before: 0.723188
+Val loss after: 0.718864
+Validation curve point -> loss: 0.972871, acc: 0.001359
+Reward: 0.004324
+Step time: 54.71s
+
+=== Step 7/10 | Baseline ===
+Validation loss: 0.765776
+Batch loss: 0.659380
+Validation loss: 0.751011
+Reward: 0.014765
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.507157
+  4: 0.599322
+Change in loss per bucket:
+  2: 0.021523
+  4: 0.029600
+Train loss: 0.659380
+Val loss before: 0.765776
+Val loss after: 0.751011
+Validation curve point -> loss: 0.962706, acc: 0.001359
+Reward: 0.014765
+Step time: 20.76s
+
+=== Step 8/10 | Baseline ===
+Validation loss: 0.784876
+Batch loss: 0.758739
+Validation loss: 0.784998
+Reward: -0.000123
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.503619
+  1: 0.770569
+Change in loss per bucket:
+  0: -0.073165
+  1: 0.081171
+Train loss: 0.758739
+Val loss before: 0.784876
+Val loss after: 0.784998
+Validation curve point -> loss: 0.957611, acc: 0.001359
+Reward: -0.000123
+Step time: 10.96s
+
+=== Step 9/10 | Baseline ===
+Validation loss: 0.763645
+Batch loss: 0.920748
+Validation loss: 0.759953
+Reward: 0.003692
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.691416
+  3: 0.869818
+Change in loss per bucket:
+  0: 0.005124
+  3: nan
+Train loss: 0.920748
+Val loss before: 0.763645
+Val loss after: 0.759953
+Validation curve point -> loss: 0.956676, acc: 0.001359
+Reward: 0.003692
+Step time: 5.39s
+
+=== Step 10/10 | Baseline ===
+Validation loss: 0.662804
+Batch loss: 0.877405
+Validation loss: 0.660241
+Reward: 0.002563
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 0.880565
+  4: 0.736668
+Change in loss per bucket:
+  3: nan
+  4: 0.061924
+Train loss: 0.877405
+Val loss before: 0.662804
+Val loss after: 0.660241
+Validation curve point -> loss: 0.956004, acc: 0.001359
+Reward: 0.002563
+Step time: 5.26s
+
+Validation loss curve (loss vs steps):
+  step 1: 1.010372
+  step 2: 0.979855
+  step 3: 0.987737
+  step 4: 0.988694
+  step 5: 0.988563
+  step 6: 0.972871
+  step 7: 0.962706
+  step 8: 0.957611
+  step 9: 0.956676
+  step 10: 0.956004
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.001359
+  step 2: 0.001359
+  step 3: 0.001359
+  step 4: 0.001359
+  step 5: 0.001359
+  step 6: 0.001359
+  step 7: 0.001359
+  step 8: 0.001359
+  step 9: 0.001359
+  step 10: 0.001359
+
+Reward over time:
+  step 1: 0.082832
+  step 2: 0.034375
+  step 3: -0.008721
+  step 4: -0.004762
+  step 5: 0.001188
+  step 6: 0.004324
+  step 7: 0.014765
+  step 8: -0.000123
+  step 9: 0.003692
+  step 10: 0.002563
+
+Teacher bucket probabilities over time:
+  step 1: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 2: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 3: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 4: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 5: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 6: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 7: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 8: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 9: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 10: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+Step times:
+  step 1: 5.09s
+  step 2: 6.38s
+  step 3: 5.84s
+  step 4: 10.77s
+  step 5: 8.81s
+  step 6: 54.71s
+  step 7: 20.76s
+  step 8: 10.96s
+  step 9: 5.39s
+  step 10: 5.26s
+
+Final held-out test loss: 0.857966
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 10
+
+
+######## Seed=22 Episode=0 | Curriculum ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Curriculum ===
+Validation loss: 1.102816
+Batch loss: 1.075986
+Validation loss: 0.986746
+Reward: 0.116069
+Current bucket probabilities after update: [0.19047619047619047, 0.21428571428571427, 0.19047619047619047, 0.19047619047619047, 0.21428571428571427]
+Avg loss per bucket:
+  1: 0.617845
+  4: 0.402905
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.000000
+Train loss: 1.075986
+Val loss before: 1.102816
+Val loss after: 0.986746
+Validation curve point -> loss: 0.895231, acc: 0.023891
+Reward: 0.116069
+Step time: 8.41s
+
+=== Step 2/10 | Curriculum ===
+Validation loss: 0.731337
+Batch loss: 1.139271
+Validation loss: 0.728255
+Reward: 0.003082
+Current bucket probabilities after update: [0.18140589569160995, 0.2040816326530612, 0.18140589569160995, 0.18140589569160995, 0.25170068027210885]
+Avg loss per bucket:
+  4: 0.774053
+Change in loss per bucket:
+  4: 0.111344
+Train loss: 1.139271
+Val loss before: 0.731337
+Val loss after: 0.728255
+Validation curve point -> loss: 0.867096, acc: 0.023891
+Reward: 0.003082
+Step time: 8.24s
+
+=== Step 3/10 | Curriculum ===
+Validation loss: 0.877573
+Batch loss: 0.668924
+Validation loss: 0.868896
+Reward: 0.008677
+Current bucket probabilities after update: [0.1727675197062952, 0.21817298347910594, 0.1727675197062952, 0.196577043515819, 0.23971493359248466]
+Avg loss per bucket:
+  1: nan
+  3: 0.334676
+Change in loss per bucket:
+  1: nan
+  3: 0.000000
+Train loss: 0.668924
+Val loss before: 0.877573
+Val loss after: 0.868896
+Validation curve point -> loss: 0.834548, acc: 0.023891
+Reward: 0.008677
+Step time: 7.58s
+
+=== Step 4/10 | Curriculum ===
+Validation loss: 0.800408
+Batch loss: 0.668399
+Validation loss: 0.776085
+Reward: 0.024322
+Current bucket probabilities after update: [0.16454049495837636, 0.2554028414086723, 0.16454049495837636, 0.1872162319198276, 0.2282999367547473]
+Avg loss per bucket:
+  1: 0.381224
+Change in loss per bucket:
+  1: nan
+Train loss: 0.668399
+Val loss before: 0.800408
+Val loss after: 0.776085
+Validation curve point -> loss: 0.800822, acc: 0.020478
+Reward: 0.024322
+Step time: 28.92s
+
+=== Step 5/10 | Curriculum ===
+Validation loss: 0.693181
+Batch loss: 0.848664
+Validation loss: 0.692453
+Reward: 0.000729
+Current bucket probabilities after update: [0.15670523329369176, 0.24324080134159268, 0.15670523329369176, 0.22592022087602628, 0.21742851119499743]
+Avg loss per bucket:
+  3: 0.665954
+Change in loss per bucket:
+  3: 0.099383
+Train loss: 0.848664
+Val loss before: 0.693181
+Val loss after: 0.692453
+Validation curve point -> loss: 0.800038, acc: 0.023891
+Reward: 0.000729
+Step time: 28.34s
+
+=== Step 6/10 | Curriculum ===
+Validation loss: 0.731224
+Batch loss: 1.264185
+Validation loss: 0.732947
+Reward: -0.001722
+Current bucket probabilities after update: [0.16495287715125448, 0.25604294878062384, 0.16495287715125448, 0.21149496934318557, 0.2025563275736815]
+Avg loss per bucket:
+  3: 1.018163
+  4: nan
+Change in loss per bucket:
+  3: 0.175231
+  4: nan
+Train loss: 1.264185
+Val loss before: 0.731224
+Val loss after: 0.732947
+Validation curve point -> loss: 0.792148, acc: 0.023891
+Reward: -0.001722
+Step time: 6.66s
+
+=== Step 7/10 | Curriculum ===
+Validation loss: 0.750349
+Batch loss: 0.983176
+Validation loss: 0.757905
+Reward: -0.007556
+Current bucket probabilities after update: [0.14731881805395214, 0.26951889345328833, 0.14731881805395214, 0.22262628351914274, 0.21321718691966476]
+Avg loss per bucket:
+  0: 0.943072
+  2: 0.765388
+Change in loss per bucket:
+  0: 0.000000
+  2: -0.000000
+Train loss: 0.983176
+Val loss before: 0.750349
+Val loss after: 0.757905
+Validation curve point -> loss: 0.790119, acc: 0.023891
+Reward: -0.007556
+Step time: 6.81s
+
+=== Step 8/10 | Curriculum ===
+Validation loss: 0.525108
+Batch loss: 0.986658
+Validation loss: 0.517314
+Reward: 0.007794
+Current bucket probabilities after update: [0.14030363624185918, 0.2566846604317032, 0.164113160051383, 0.23583455573251688, 0.20306398754253785]
+Avg loss per bucket:
+  2: 1.009570
+  3: 0.519391
+Change in loss per bucket:
+  2: 0.073255
+  3: -0.026970
+Train loss: 0.986658
+Val loss before: 0.525108
+Val loss after: 0.517314
+Validation curve point -> loss: 0.778783, acc: 0.023891
+Reward: 0.007794
+Step time: 4.95s
+
+=== Step 9/10 | Curriculum ===
+Validation loss: 0.883419
+Batch loss: 1.078237
+Validation loss: 0.886595
+Reward: -0.003176
+Current bucket probabilities after update: [0.14768803814932543, 0.2701943794017928, 0.14643490531724523, 0.22193111129738619, 0.21375156583425034]
+Avg loss per bucket:
+  2: 0.920719
+  3: 1.049898
+Change in loss per bucket:
+  2: 0.024623
+  3: 0.140273
+Train loss: 1.078237
+Val loss before: 0.883419
+Val loss after: 0.886595
+Validation curve point -> loss: 0.771935, acc: 0.023891
+Reward: -0.003176
+Step time: 7.66s
+
+=== Step 10/10 | Curriculum ===
+Validation loss: 0.792250
+Batch loss: 0.717985
+Validation loss: 0.794312
+Reward: -0.002061
+Current bucket probabilities after update: [0.12914530331507942, 0.2844151362124135, 0.15414200559710026, 0.20729590662882758, 0.2250016482465793]
+Avg loss per bucket:
+  0: 0.383703
+  3: 0.724681
+Change in loss per bucket:
+  0: -0.167811
+  3: 0.000626
+Train loss: 0.717985
+Val loss before: 0.792250
+Val loss after: 0.794312
+Validation curve point -> loss: 0.766709, acc: 0.023891
+Reward: -0.002061
+Step time: 16.67s
+
+Validation loss curve (loss vs steps):
+  step 1: 0.895231
+  step 2: 0.867096
+  step 3: 0.834548
+  step 4: 0.800822
+  step 5: 0.800038
+  step 6: 0.792148
+  step 7: 0.790119
+  step 8: 0.778783
+  step 9: 0.771935
+  step 10: 0.766709
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.023891
+  step 2: 0.023891
+  step 3: 0.023891
+  step 4: 0.020478
+  step 5: 0.023891
+  step 6: 0.023891
+  step 7: 0.023891
+  step 8: 0.023891
+  step 9: 0.023891
+  step 10: 0.023891
+
+Reward over time:
+  step 1: 0.116069
+  step 2: 0.003082
+  step 3: 0.008677
+  step 4: 0.024322
+  step 5: 0.000729
+  step 6: -0.001722
+  step 7: -0.007556
+  step 8: 0.007794
+  step 9: -0.003176
+  step 10: -0.002061
+
+Teacher bucket probabilities over time:
+  step 1: [0.19047619047619047, 0.21428571428571427, 0.19047619047619047, 0.19047619047619047, 0.21428571428571427]
+  step 2: [0.18140589569160995, 0.2040816326530612, 0.18140589569160995, 0.18140589569160995, 0.25170068027210885]
+  step 3: [0.1727675197062952, 0.21817298347910594, 0.1727675197062952, 0.196577043515819, 0.23971493359248466]
+  step 4: [0.16454049495837636, 0.2554028414086723, 0.16454049495837636, 0.1872162319198276, 0.2282999367547473]
+  step 5: [0.15670523329369176, 0.24324080134159268, 0.15670523329369176, 0.22592022087602628, 0.21742851119499743]
+  step 6: [0.16495287715125448, 0.25604294878062384, 0.16495287715125448, 0.21149496934318557, 0.2025563275736815]
+  step 7: [0.14731881805395214, 0.26951889345328833, 0.14731881805395214, 0.22262628351914274, 0.21321718691966476]
+  step 8: [0.14030363624185918, 0.2566846604317032, 0.164113160051383, 0.23583455573251688, 0.20306398754253785]
+  step 9: [0.14768803814932543, 0.2701943794017928, 0.14643490531724523, 0.22193111129738619, 0.21375156583425034]
+  step 10: [0.12914530331507942, 0.2844151362124135, 0.15414200559710026, 0.20729590662882758, 0.2250016482465793]
+
+Step times:
+  step 1: 8.41s
+  step 2: 8.24s
+  step 3: 7.58s
+  step 4: 28.92s
+  step 5: 28.34s
+  step 6: 6.66s
+  step 7: 6.81s
+  step 8: 4.95s
+  step 9: 7.66s
+  step 10: 16.67s
+
+Final held-out test loss: 0.865786
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 10
+
+
+######## Seed=22 Episode=0 | Baseline ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Baseline ===
+Validation loss: 1.102816
+Batch loss: 1.075986
+Validation loss: 0.986746
+Reward: 0.116069
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.617845
+  4: 0.402905
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.000000
+Train loss: 1.075986
+Val loss before: 1.102816
+Val loss after: 0.986746
+Validation curve point -> loss: 0.895231, acc: 0.023891
+Reward: 0.116069
+Step time: 6.42s
+
+=== Step 2/10 | Baseline ===
+Validation loss: 0.731337
+Batch loss: 1.139271
+Validation loss: 0.728255
+Reward: 0.003082
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  4: 0.774053
+Change in loss per bucket:
+  4: 0.111344
+Train loss: 1.139271
+Val loss before: 0.731337
+Val loss after: 0.728255
+Validation curve point -> loss: 0.867096, acc: 0.023891
+Reward: 0.003082
+Step time: 4.81s
+
+=== Step 3/10 | Baseline ===
+Validation loss: 0.877573
+Batch loss: 0.775586
+Validation loss: 0.854289
+Reward: 0.023285
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.506222
+  3: 0.422307
+Change in loss per bucket:
+  0: 0.000000
+  3: 0.000000
+Train loss: 0.775586
+Val loss before: 0.877573
+Val loss after: 0.854289
+Validation curve point -> loss: 0.810305, acc: 0.023891
+Reward: 0.023285
+Step time: 4.64s
+
+=== Step 4/10 | Baseline ===
+Validation loss: 0.768592
+Batch loss: 0.655217
+Validation loss: 0.763622
+Reward: 0.004970
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.383694
+Change in loss per bucket:
+  1: -0.070245
+Train loss: 0.655217
+Val loss before: 0.768592
+Val loss after: 0.763622
+Validation curve point -> loss: 0.804252, acc: 0.023891
+Reward: 0.004970
+Step time: 3.99s
+
+=== Step 5/10 | Baseline ===
+Validation loss: 0.689230
+Batch loss: 0.832430
+Validation loss: 0.692182
+Reward: -0.002952
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 0.659424
+Change in loss per bucket:
+  3: 0.071135
+Train loss: 0.832430
+Val loss before: 0.689230
+Val loss after: 0.692182
+Validation curve point -> loss: 0.814025, acc: 0.023891
+Reward: -0.002952
+Step time: 4.46s
+
+=== Step 6/10 | Baseline ===
+Validation loss: 0.723553
+Batch loss: 1.254061
+Validation loss: 0.725255
+Reward: -0.001702
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 1.004202
+  4: nan
+Change in loss per bucket:
+  3: 0.153228
+  4: nan
+Train loss: 1.254061
+Val loss before: 0.723553
+Val loss after: 0.725255
+Validation curve point -> loss: 0.802076, acc: 0.023891
+Reward: -0.001702
+Step time: 4.59s
+
+=== Step 7/10 | Baseline ===
+Validation loss: 0.749288
+Batch loss: 0.955649
+Validation loss: 0.749940
+Reward: -0.000652
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.896478
+  2: 0.745188
+Change in loss per bucket:
+  0: 0.117077
+  2: 0.000000
+Train loss: 0.955649
+Val loss before: 0.749288
+Val loss after: 0.749940
+Validation curve point -> loss: 0.799469, acc: 0.023891
+Reward: -0.000652
+Step time: 5.29s
+
+=== Step 8/10 | Baseline ===
+Validation loss: 0.536323
+Batch loss: 1.053679
+Validation loss: 0.533680
+Reward: 0.002644
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.900800
+Change in loss per bucket:
+  2: 0.046684
+Train loss: 1.053679
+Val loss before: 0.536323
+Val loss after: 0.533680
+Validation curve point -> loss: 0.792490, acc: 0.023891
+Reward: 0.002644
+Step time: 3.77s
+
+=== Step 9/10 | Baseline ===
+Validation loss: 0.895713
+Batch loss: 1.083578
+Validation loss: 0.892108
+Reward: 0.003606
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.906486
+  3: 1.059886
+Change in loss per bucket:
+  2: 0.034384
+  3: 0.123965
+Train loss: 1.083578
+Val loss before: 0.895713
+Val loss after: 0.892108
+Validation curve point -> loss: 0.782340, acc: 0.023891
+Reward: 0.003606
+Step time: 4.80s
+
+=== Step 10/10 | Baseline ===
+Validation loss: 0.789022
+Batch loss: 0.707003
+Validation loss: 0.787958
+Reward: 0.001064
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.363446
+  3: 0.708349
+Change in loss per bucket:
+  0: -0.077956
+  3: -0.018686
+Train loss: 0.707003
+Val loss before: 0.789022
+Val loss after: 0.787958
+Validation curve point -> loss: 0.775239, acc: 0.023891
+Reward: 0.001064
+Step time: 5.11s
+
+Validation loss curve (loss vs steps):
+  step 1: 0.895231
+  step 2: 0.867096
+  step 3: 0.810305
+  step 4: 0.804252
+  step 5: 0.814025
+  step 6: 0.802076
+  step 7: 0.799469
+  step 8: 0.792490
+  step 9: 0.782340
+  step 10: 0.775239
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.023891
+  step 2: 0.023891
+  step 3: 0.023891
+  step 4: 0.023891
+  step 5: 0.023891
+  step 6: 0.023891
+  step 7: 0.023891
+  step 8: 0.023891
+  step 9: 0.023891
+  step 10: 0.023891
+
+Reward over time:
+  step 1: 0.116069
+  step 2: 0.003082
+  step 3: 0.023285
+  step 4: 0.004970
+  step 5: -0.002952
+  step 6: -0.001702
+  step 7: -0.000652
+  step 8: 0.002644
+  step 9: 0.003606
+  step 10: 0.001064
+
+Teacher bucket probabilities over time:
+  step 1: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 2: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 3: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 4: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 5: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 6: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 7: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 8: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 9: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 10: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+Step times:
+  step 1: 6.42s
+  step 2: 4.81s
+  step 3: 4.64s
+  step 4: 3.99s
+  step 5: 4.46s
+  step 6: 4.59s
+  step 7: 5.29s
+  step 8: 3.77s
+  step 9: 4.80s
+  step 10: 5.11s
+
+Final held-out test loss: 0.854804
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 10
+
+
+######## Seed=33 Episode=0 | Curriculum ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Curriculum ===
+Validation loss: 1.071282
+Batch loss: 0.978950
+Validation loss: 1.017657
+Reward: 0.053625
+Current bucket probabilities after update: [0.19047619047619047, 0.21428571428571427, 0.21428571428571427, 0.19047619047619047, 0.19047619047619047]
+Avg loss per bucket:
+  1: 0.574180
+  2: 0.357996
+Change in loss per bucket:
+  1: 0.000000
+  2: 0.000000
+Train loss: 0.978950
+Val loss before: 1.071282
+Val loss after: 1.017657
+Validation curve point -> loss: 0.723532, acc: 0.000000
+Reward: 0.053625
+Step time: 6.30s
+
+=== Step 2/10 | Curriculum ===
+Validation loss: 1.395453
+Batch loss: 1.253706
+Validation loss: 1.314888
+Reward: 0.080565
+Current bucket probabilities after update: [0.2052154195011338, 0.20408163265306126, 0.22789115646258506, 0.18140589569161, 0.18140589569161]
+Avg loss per bucket:
+  0: 0.882768
+  2: 0.637965
+Change in loss per bucket:
+  0: -0.000000
+  2: 0.083991
+Train loss: 1.253706
+Val loss before: 1.395453
+Val loss after: 1.314888
+Validation curve point -> loss: 0.700958, acc: 0.000000
+Reward: 0.080565
+Step time: 4.87s
+
+=== Step 3/10 | Curriculum ===
+Validation loss: 0.950433
+Batch loss: 0.879358
+Validation loss: 0.941873
+Reward: 0.008560
+Current bucket probabilities after update: [0.19544325666774642, 0.1943634596695821, 0.24084872044055716, 0.196577043515819, 0.1727675197062952]
+Avg loss per bucket:
+  2: 0.376076
+  3: 0.684841
+Change in loss per bucket:
+  2: -0.019773
+  3: 0.000000
+Train loss: 0.879358
+Val loss before: 0.950433
+Val loss after: 0.941873
+Validation curve point -> loss: 0.701989, acc: 0.000000
+Reward: 0.008560
+Step time: 5.54s
+
+=== Step 4/10 | Curriculum ===
+Validation loss: 0.982950
+Batch loss: 0.586278
+Validation loss: 0.985356
+Reward: -0.002405
+Current bucket probabilities after update: [0.20572974386078574, 0.17827732596798118, 0.25352496888479703, 0.20692320370086215, 0.15554475758557393]
+Avg loss per bucket:
+  1: 0.351722
+  4: 0.414257
+Change in loss per bucket:
+  1: -0.066737
+  4: 0.000000
+Train loss: 0.586278
+Val loss before: 0.982950
+Val loss after: 0.985356
+Validation curve point -> loss: 0.710376, acc: 0.000000
+Reward: -0.002405
+Step time: 4.75s
+
+=== Step 5/10 | Curriculum ===
+Validation loss: 0.996589
+Batch loss: 0.534084
+Validation loss: 1.002242
+Reward: -0.005653
+Current bucket probabilities after update: [0.21655762511661658, 0.18766034312419072, 0.2668683882997864, 0.19149810915880228, 0.13741553430060416]
+Avg loss per bucket:
+  3: 0.294471
+  4: 0.497649
+Change in loss per bucket:
+  3: -0.117111
+  4: 0.025017
+Train loss: 0.534084
+Val loss before: 0.996589
+Val loss after: 1.002242
+Validation curve point -> loss: 0.715008, acc: 0.000000
+Reward: -0.005653
+Step time: 4.63s
+
+=== Step 6/10 | Curriculum ===
+Validation loss: 0.927036
+Batch loss: 0.894038
+Validation loss: 0.928887
+Reward: -0.001851
+Current bucket probabilities after update: [0.22795539485959637, 0.1975372032886218, 0.25459830347345935, 0.17526116753558132, 0.14464793084274122]
+Avg loss per bucket:
+  2: 0.958526
+  3: 0.597867
+Change in loss per bucket:
+  2: 0.160894
+  3: 0.009041
+Train loss: 0.894038
+Val loss before: 0.927036
+Val loss after: 0.928887
+Validation curve point -> loss: 0.718831, acc: 0.000000
+Reward: -0.001851
+Step time: 4.61s
+
+=== Step 7/10 | Curriculum ===
+Validation loss: 1.052070
+Batch loss: 0.957753
+Validation loss: 1.049693
+Reward: 0.002376
+Current bucket probabilities after update: [0.26471942367580603, 0.18813066979868742, 0.24247457473662795, 0.1669153976529346, 0.137759934135944]
+Avg loss per bucket:
+  0: nan
+Change in loss per bucket:
+  0: nan
+Train loss: 0.957753
+Val loss before: 1.052070
+Val loss after: 1.049693
+Validation curve point -> loss: 0.711222, acc: 0.000000
+Reward: 0.002376
+Step time: 4.11s
+
+=== Step 8/10 | Curriculum ===
+Validation loss: 1.045164
+Batch loss: 0.985321
+Validation loss: 1.051515
+Reward: -0.006352
+Current bucket probabilities after update: [0.2523362354482169, 0.19803228399861836, 0.22892060498592418, 0.17570041858203642, 0.14501045698520423]
+Avg loss per bucket:
+  0: 0.352868
+  2: 0.878936
+Change in loss per bucket:
+  0: nan
+  2: 0.088749
+Train loss: 0.985321
+Val loss before: 1.045164
+Val loss after: 1.051515
+Validation curve point -> loss: 0.705131, acc: 0.000000
+Reward: -0.006352
+Step time: 4.41s
+
+=== Step 9/10 | Curriculum ===
+Validation loss: 0.814152
+Batch loss: 0.980503
+Validation loss: 0.810026
+Reward: 0.004126
+Current bucket probabilities after update: [0.240320224236397, 0.2124116990463032, 0.21801962379611825, 0.1673337319828918, 0.16191472093828974]
+Avg loss per bucket:
+  1: 0.932465
+  4: 0.803241
+Change in loss per bucket:
+  1: 0.127507
+  4: 0.109190
+Train loss: 0.980503
+Val loss before: 0.814152
+Val loss after: 0.810026
+Validation curve point -> loss: 0.700509, acc: 0.000000
+Reward: 0.004126
+Step time: 5.00s
+
+=== Step 10/10 | Curriculum ===
+Validation loss: 0.740454
+Batch loss: 0.537695
+Validation loss: 0.741476
+Reward: -0.001021
+Current bucket probabilities after update: [0.25296865709094424, 0.22359126215400338, 0.20317855136433502, 0.14982498103462297, 0.17043654835609445]
+Avg loss per bucket:
+  2: 0.606542
+  3: 0.323202
+Change in loss per bucket:
+  2: -0.019594
+  3: -0.076071
+Train loss: 0.537695
+Val loss before: 0.740454
+Val loss after: 0.741476
+Validation curve point -> loss: 0.694105, acc: 0.000000
+Reward: -0.001021
+Step time: 4.67s
+
+Validation loss curve (loss vs steps):
+  step 1: 0.723532
+  step 2: 0.700958
+  step 3: 0.701989
+  step 4: 0.710376
+  step 5: 0.715008
+  step 6: 0.718831
+  step 7: 0.711222
+  step 8: 0.705131
+  step 9: 0.700509
+  step 10: 0.694105
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.000000
+  step 2: 0.000000
+  step 3: 0.000000
+  step 4: 0.000000
+  step 5: 0.000000
+  step 6: 0.000000
+  step 7: 0.000000
+  step 8: 0.000000
+  step 9: 0.000000
+  step 10: 0.000000
+
+Reward over time:
+  step 1: 0.053625
+  step 2: 0.080565
+  step 3: 0.008560
+  step 4: -0.002405
+  step 5: -0.005653
+  step 6: -0.001851
+  step 7: 0.002376
+  step 8: -0.006352
+  step 9: 0.004126
+  step 10: -0.001021
+
+Teacher bucket probabilities over time:
+  step 1: [0.19047619047619047, 0.21428571428571427, 0.21428571428571427, 0.19047619047619047, 0.19047619047619047]
+  step 2: [0.2052154195011338, 0.20408163265306126, 0.22789115646258506, 0.18140589569161, 0.18140589569161]
+  step 3: [0.19544325666774642, 0.1943634596695821, 0.24084872044055716, 0.196577043515819, 0.1727675197062952]
+  step 4: [0.20572974386078574, 0.17827732596798118, 0.25352496888479703, 0.20692320370086215, 0.15554475758557393]
+  step 5: [0.21655762511661658, 0.18766034312419072, 0.2668683882997864, 0.19149810915880228, 0.13741553430060416]
+  step 6: [0.22795539485959637, 0.1975372032886218, 0.25459830347345935, 0.17526116753558132, 0.14464793084274122]
+  step 7: [0.26471942367580603, 0.18813066979868742, 0.24247457473662795, 0.1669153976529346, 0.137759934135944]
+  step 8: [0.2523362354482169, 0.19803228399861836, 0.22892060498592418, 0.17570041858203642, 0.14501045698520423]
+  step 9: [0.240320224236397, 0.2124116990463032, 0.21801962379611825, 0.1673337319828918, 0.16191472093828974]
+  step 10: [0.25296865709094424, 0.22359126215400338, 0.20317855136433502, 0.14982498103462297, 0.17043654835609445]
+
+Step times:
+  step 1: 6.30s
+  step 2: 4.87s
+  step 3: 5.54s
+  step 4: 4.75s
+  step 5: 4.63s
+  step 6: 4.61s
+  step 7: 4.11s
+  step 8: 4.41s
+  step 9: 5.00s
+  step 10: 4.67s
+
+Final held-out test loss: 0.901227
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 10
+
+
+######## Seed=33 Episode=0 | Baseline ########
+D_tr size: 1569
+D_val size: 175
+Number of buckets K: 5
+Device: mps
+[MPS] Reducing B from 8 to 2 to avoid OOM.
+[MPS] Reducing m from 8 to 4 to avoid OOM.
+[MPS] Reducing max_length from 512 to 256 to avoid OOM.
+
+=== Step 1/10 | Baseline ===
+Validation loss: 1.071282
+Batch loss: 0.978950
+Validation loss: 1.017657
+Reward: 0.053625
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.574180
+  2: 0.357996
+Change in loss per bucket:
+  1: 0.000000
+  2: 0.000000
+Train loss: 0.978950
+Val loss before: 1.071282
+Val loss after: 1.017657
+Validation curve point -> loss: 0.723532, acc: 0.000000
+Reward: 0.053625
+Step time: 6.16s
+
+=== Step 2/10 | Baseline ===
+Validation loss: 1.395453
+Batch loss: 1.253706
+Validation loss: 1.314888
+Reward: 0.080565
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.882768
+  2: 0.637965
+Change in loss per bucket:
+  0: -0.000000
+  2: 0.083991
+Train loss: 1.253706
+Val loss before: 1.395453
+Val loss after: 1.314888
+Validation curve point -> loss: 0.700958, acc: 0.000000
+Reward: 0.080565
+Step time: 3.92s
+
+=== Step 3/10 | Baseline ===
+Validation loss: 0.950433
+Batch loss: 0.879358
+Validation loss: 0.941873
+Reward: 0.008560
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  2: 0.376076
+  3: 0.684841
+Change in loss per bucket:
+  2: -0.019773
+  3: 0.000000
+Train loss: 0.879358
+Val loss before: 0.950433
+Val loss after: 0.941873
+Validation curve point -> loss: 0.701989, acc: 0.000000
+Reward: 0.008560
+Step time: 4.44s
+
+=== Step 4/10 | Baseline ===
+Validation loss: 0.982950
+Batch loss: 0.586278
+Validation loss: 0.985356
+Reward: -0.002405
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.351722
+  4: 0.414257
+Change in loss per bucket:
+  1: -0.066737
+  4: 0.000000
+Train loss: 0.586278
+Val loss before: 0.982950
+Val loss after: 0.985356
+Validation curve point -> loss: 0.710376, acc: 0.000000
+Reward: -0.002405
+Step time: 4.36s
+
+=== Step 5/10 | Baseline ===
+Validation loss: 0.996589
+Batch loss: 0.534084
+Validation loss: 1.002242
+Reward: -0.005653
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 0.294471
+  4: 0.497649
+Change in loss per bucket:
+  3: -0.117111
+  4: 0.025017
+Train loss: 0.534084
+Val loss before: 0.996589
+Val loss after: 1.002242
+Validation curve point -> loss: 0.715008, acc: 0.000000
+Reward: -0.005653
+Step time: 4.26s
+
+=== Step 6/10 | Baseline ===
+Validation loss: 0.927036
+Batch loss: 0.909976
+Validation loss: 0.927580
+Reward: -0.000543
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 0.846125
+Change in loss per bucket:
+  3: 0.083518
+Train loss: 0.909976
+Val loss before: 0.927036
+Val loss after: 0.927580
+Validation curve point -> loss: 0.716179, acc: 0.000000
+Reward: -0.000543
+Step time: 4.61s
+
+=== Step 7/10 | Baseline ===
+Validation loss: 1.048755
+Batch loss: 0.841247
+Validation loss: 1.049557
+Reward: -0.000802
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.718217
+  1: 0.685819
+Change in loss per bucket:
+  0: -0.049365
+  1: 0.053513
+Train loss: 0.841247
+Val loss before: 1.048755
+Val loss after: 1.049557
+Validation curve point -> loss: 0.705607, acc: 0.000000
+Reward: -0.000802
+Step time: 4.49s
+
+=== Step 8/10 | Baseline ===
+Validation loss: 1.039918
+Batch loss: 0.977124
+Validation loss: 1.039323
+Reward: 0.000595
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  0: 0.320096
+  2: 0.847750
+Change in loss per bucket:
+  0: -0.153992
+  2: 0.127661
+Train loss: 0.977124
+Val loss before: 1.039918
+Val loss after: 1.039323
+Validation curve point -> loss: 0.702609, acc: 0.000000
+Reward: 0.000595
+Step time: 3.90s
+
+=== Step 9/10 | Baseline ===
+Validation loss: 0.810030
+Batch loss: 0.953957
+Validation loss: 0.802908
+Reward: 0.007122
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  1: 0.857908
+  4: 0.777363
+Change in loss per bucket:
+  1: 0.089086
+  4: 0.101427
+Train loss: 0.953957
+Val loss before: 0.810030
+Val loss after: 0.802908
+Validation curve point -> loss: 0.695496, acc: 0.000000
+Reward: 0.007122
+Step time: 4.16s
+
+=== Step 10/10 | Baseline ===
+Validation loss: 0.736417
+Batch loss: 0.755512
+Validation loss: 0.734338
+Reward: 0.002080
+Current bucket probabilities after update: [0.2, 0.2, 0.2, 0.2, 0.2]
+Avg loss per bucket:
+  3: 0.633879
+Change in loss per bucket:
+  3: -0.005211
+Train loss: 0.755512
+Val loss before: 0.736417
+Val loss after: 0.734338
+Validation curve point -> loss: 0.687963, acc: 0.000000
+Reward: 0.002080
+Step time: 4.49s
+
+Validation loss curve (loss vs steps):
+  step 1: 0.723532
+  step 2: 0.700958
+  step 3: 0.701989
+  step 4: 0.710376
+  step 5: 0.715008
+  step 6: 0.716179
+  step 7: 0.705607
+  step 8: 0.702609
+  step 9: 0.695496
+  step 10: 0.687963
+
+Validation accuracy curve (acc vs steps):
+  step 1: 0.000000
+  step 2: 0.000000
+  step 3: 0.000000
+  step 4: 0.000000
+  step 5: 0.000000
+  step 6: 0.000000
+  step 7: 0.000000
+  step 8: 0.000000
+  step 9: 0.000000
+  step 10: 0.000000
+
+Reward over time:
+  step 1: 0.053625
+  step 2: 0.080565
+  step 3: 0.008560
+  step 4: -0.002405
+  step 5: -0.005653
+  step 6: -0.000543
+  step 7: -0.000802
+  step 8: 0.000595
+  step 9: 0.007122
+  step 10: 0.002080
+
+Teacher bucket probabilities over time:
+  step 1: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 2: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 3: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 4: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 5: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 6: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 7: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 8: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 9: [0.2, 0.2, 0.2, 0.2, 0.2]
+  step 10: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+Step times:
+  step 1: 6.16s
+  step 2: 3.92s
+  step 3: 4.44s
+  step 4: 4.36s
+  step 5: 4.26s
+  step 6: 4.61s
+  step 7: 4.49s
+  step 8: 3.90s
+  step 9: 4.16s
+  step 10: 4.49s
+
+Final held-out test loss: 0.899853
+Final held-out test accuracy: 0.000000
+Convergence step (best val loss): 10
+
+===== Curriculum Summary =====
+Runs: 3
+Avg final held-out test loss: 0.873198
+Avg final held-out test accuracy: 0.000000
+Avg convergence step: 9.67
+Avg step time (seconds): 9.44
+
+===== Vanilla SFT Baseline Summary =====
+Runs: 3
+Avg final held-out test loss: 0.870874
+Avg final held-out test accuracy: 0.000000
+Avg convergence step: 10.00
+Avg step time (seconds): 7.55

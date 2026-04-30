@@ -6,7 +6,7 @@ def update_bucket_loss_stats(
     bucket_labels,
     losses,
     stats=None,
-    alpha=0.3,
+    alpha=0.3, # ?? 
 ):
     """
     Update running loss statistics per bucket.
@@ -24,7 +24,7 @@ def update_bucket_loss_stats(
           - loss_change: dict[bucket -> float]
           - batch_avg_loss: dict[bucket -> float] (for buckets seen this batch)
     """
-    _ = batch_examples  # not needed now, but included as requested by task inputs
+    _ = batch_examples      # not needed now, but included as requested by task inputs
 
     if len(bucket_labels) != len(losses):
         raise ValueError("bucket_labels and losses must have the same length")

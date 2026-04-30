@@ -1,0 +1,407 @@
+# Q&A for all '# ??' markers in the codebase
+
+1) scripts/bucket_stats.py:9
+Q: `alpha=0.3, # ??`
+A: `alpha` is the EMA smoothing factor for bucket loss stats. Higher values react faster to new batch losses; lower values are smoother and less noisy.
+
+2) scripts/teacher_policy.py:54
+Q: `why max(1, T - 1)`
+A: It prevents division by zero when `T=1` and keeps step normalization stable (`step_t / (T-1)` when `T>1`).
+
+3) scripts/teacher_policy.py:56
+Q: `does this mean we re getting the avg so far across the buckets ?`
+A: Yes. It builds a length-`K` vector of current running average loss values, one value per bucket (default `0.0` if unseen).
+
+4) scripts/teacher_policy.py:61
+Q: `do we compare change in loss from one t to next, and how if not stored by bucket?`
+A: Yes. The per-bucket change is stored in `stats["loss_change"]`, which is updated in `update_bucket_loss_stats` as `new_running_avg - previous_running_avg` for each seen bucket.
+
+5) scripts/teacher_policy.py:65
+Q: `what does cat mean here?`
+A: `torch.cat(..., dim=0)` concatenates tensors end-to-end into one 1D observation vector: `[step_feature | avg_vec | change_vec]`.
+
+6) scripts/teacher_policy.py:74
+Q: `why softmax`
+A: Softmax converts arbitrary logits into a valid probability distribution over buckets (non-negative and sums to 1).
+
+7) scripts/teacher_policy.py:85
+Q: `why Dirichlet ?`
+A: The action is a full probability vector over buckets (not a single class). Dirichlet is the standard distribution over simplex vectors.
+
+8) scripts/teacher_policy.py:88
+Q: `what is the purpose of this line?`
+A: `concentration = probs * concentration_scale + 1e-4` maps policy mean probs to Dirichlet concentration parameters. `concentration_scale` controls sharpness/variance; `1e-4` avoids zeros.
+
+9) scripts/teacher_policy.py:90
+Q: `why rsample`
+A: `rsample()` uses reparameterized sampling (when supported), which is more gradient-friendly than plain `sample()`. Here it is also fine to use `sample()` since REINFORCE uses `log_prob`.
+
+10) scripts/teacher_policy.py:92
+Q: `what are we exactly returning here?`
+A: Three items: (1) sampled action distribution `a_t` as Python list, (2) `log_prob_t` tensor for policy-gradient update, (3) current mean policy probs as list for logging/analysis.
+
+11) scripts/teacher_policy.py:93
+Q: `why detach+cpu+tolist and will this work on HPC?`
+A: Detach breaks autograd tracking; `cpu().tolist()` converts to plain Python data for non-torch code/logging. Yes, this works on HPC; only this small output vector is moved to CPU.
+
+12) scripts/training_loop.py:27
+Q: `what is gc`
+A: `gc` is Python's garbage collector module. `gc.collect()` forces cleanup of unreferenced Python objects.
+
+13) scripts/training_loop.py:35
+Q: `what does this function do`
+A: It samples `m` unique random examples uniformly from a dataset split, deterministically for a given `seed`.
+
+14) scripts/training_loop.py:50
+Q: `what does this function do`
+A: It runs eval mode on a batch, computes cross-entropy loss on unmasked solution tokens, and computes token-level accuracy over those same unmasked tokens.
+
+15) scripts/training_loop.py:67
+Q: `??` (accuracy line)
+A: If there are no valid target tokens, accuracy is set to `0.0`; otherwise accuracy is mean exact token match on `labels != -100` positions.
+
+16) scripts/training_loop.py:71
+Q: `is token-level accuracy worth keeping for PoC?`
+A: Yes for a PoC: keep it as a cheap sanity metric, but treat it as auxiliary because semantic math correctness can differ from exact token match.
+
+17) scripts/training_loop.py:116
+Q: `difference between random.seed and torch.manual_seed, need both, and numpy?`
+A: `random.seed` controls Python RNG (Random Number Generator), `torch.manual_seed` controls PyTorch RNG. You need both because your code uses both sources. If NumPy is used anywhere, seed NumPy too.
+
+18) scripts/training_loop.py:119
+Q: `why these float specifications`
+A: `float32` on CPU is stable and standard. `float16` on accelerator reduces memory and can speed up. Tradeoff: `float16` may be less numerically stable.
+
+19) scripts/training_loop.py:128
+Q: `what does AutoModelForCausalLM do`
+A: It auto-selects and loads the correct Hugging Face causal language model class (with LM head) for the checkpoint name.
+
+20) scripts/training_loop.py:134
+Q: `why p_ref is defined this way`
+A: `p_ref` is the uniform reference distribution over buckets; it is used as baseline behavior and as the KL anchor for stability penalty.
+Used in two places:
+
+For the baseline run (when use_teacher=False): The teacher doesn't make decisions; instead, we sample uniformly from buckets using p_ref[:].
+
+For stability penalty (in both runs): The teacher's learned distribution is penalized for deviating too much from p_ref. The stability penalty computes KL divergence between the teacher's action a_t and p_ref:
+stability_penalty = compute_stability_penalty_kl(a_t, p_ref)
+reward = validation_improvement - lambda_cost * compute_cost - alpha_stability * stability_penalty\
+
+This encourages the teacher to stay somewhat close to uniform sampling, preventing it from collapsing to a single bucket.
+
+
+
+21) scripts/training_loop.py:141
+Q: `what is hidden_dim and how choose it`
+A: `hidden_dim` is width of the teacher MLP hidden layer. Larger means more capacity (and compute/overfit risk). Start small (e.g., 32), then tune (16/32/64/128).
+
+
+
+22) scripts/training_loop.py:187
+Q: `what does p_ref[:] mean`
+A: It makes a shallow copy of the list so `a_t` is independent from `p_ref`.
+
+23) scripts/training_loop.py:188
+Q: `what does a_t[:] mean`
+A: Same: shallow copy. `teacher_probs` becomes an independent list with same values.
+
+24) scripts/training_loop.py:189
+Q: `what does log_prob_t = None mean`
+A: In baseline mode there is no sampled teacher action distribution to optimize, so there is no log-prob term for REINFORCE.
+
+25) scripts/training_loop.py:196
+Q: `why this seeding strategy, and include a_t in seed?`
+A: It creates deterministic but distinct seeds per `(episode, step)`. Teacher influence already happens through `weights=a_t` in sampling, so adding `a_t` to seed is unnecessary.
+
+26) scripts/training_loop.py:208
+Q: `need max_length here if just evaluating?`
+A: Yes. Evaluation still tokenizes/pads/truncates sequences and must respect memory/context limits consistently with training.
+
+27) scripts/training_loop.py:222
+Q: `rename example_losses and explain step`
+A: This computes per-example losses on the sampled training batch after the student update, then updates per-bucket running stats. Better name: `training_example_losses`.
+
+28) scripts/training_loop.py:227
+Q: `need max_length here if just computing losses?`
+A: Yes. Per-example loss computation still requires tokenized model inputs, so truncation length must be defined.
+
+29) scripts/training_loop.py:263
+Q: `batch_examples=fixed_val_batch, # ??`
+A: Using a fixed validation batch each step makes `val_loss_curve` comparable over time (less noise from changing samples).
+
+30) scripts/training_loop.py:265
+Q: `max_length=max_length, # ??`
+A: Needed for the same reasons as other eval calls: consistent truncation and memory safety.
+
+31) scripts/training_loop.py:305
+Q: `updated_probs = teacher_policy_probs( # ??`
+A: This reads the teacher's final policy distribution after REINFORCE update, so you can inspect how bucket preferences changed.
+
+32) scripts/training_loop.py:410
+Q: `D_val_curve vs D_test, why curve, visual example`
+A: `D_val_curve` is used during training for step-wise metrics/reward; `D_test` is kept for final held-out evaluation only. It is called a curve because metrics are recorded across steps. Example shape:
+- `D_tr`: 800 examples (used for training draws)
+- `D_val_curve`: 100 examples (sampled repeatedly per step)
+- `D_test`: 100 examples (sampled once at end)
+- `buckets`: `{level_1:[...], level_2:[...], ...}` built from `D_tr`
+
+33) scripts/training_loop.py:430
+Q: `relation between bucket_keys and buckets, visual example, action-space relation`
+A: `bucket_keys` is sorted original bucket labels; `buckets` remaps them to contiguous integer ids. Example:
+- `bucket_keys = ['1','2','3']`
+- `buckets = {0: buckets_raw['1'], 1: buckets_raw['2'], 2: buckets_raw['3']}`
+Teacher action `a_t[i]` corresponds directly to integer bucket `i`.
+
+34) scripts/training_loop.py:450
+Q: `teacher_hidden_dim # ???`
+A: Teacher MLP capacity hyperparameter (hidden layer width).
+
+35) scripts/training_loop.py:451
+Q: `gamma # ???`
+A: Reward discount factor in return computation (`0<gamma<=1`), controls weight on future rewards.
+
+36) scripts/training_loop.py:452
+Q: `lambda_cost # ???`
+A: Weight on compute-cost penalty in reward (`reward -= lambda_cost * compute_cost`).
+
+37) scripts/training_loop.py:453
+Q: `alpha_stability # ???`
+A: Weight on KL stability penalty toward `p_ref` (`reward -= alpha_stability * KL(a_t || p_ref)`).
+
+38) scripts/dataset_prep.py:37
+Q: `what does stratify_by_column do`
+A: It preserves class proportions of `level` across splits (approximately), so train/val/test have similar level distribution.
+
+39) scripts/dataset_prep.py:41
+Q: `why holdout_ratio / (val_ratio + holdout_ratio)`
+A: The second split happens on `temp = val+holdout`. This fraction picks the holdout share within `temp`. Example: if val=0.1 and holdout=0.1, temp=0.2, holdout fraction in temp = 0.1/0.2 = 0.5.
+
+40) scripts/dataset_prep.py:68
+Q: `visual example of buckets variable`
+A: Example:
+- `{'1': [ex1, ex7], '2': [ex3, ex9, ex11], '3': [ex2]}`
+After sorting, key order is deterministic by string form.
+
+41) scripts/student_step.py:42
+Q: `why solution only`
+A: Because loss is computed only on solution tokens; prompt/problem tokens are masked with `-100` and do not contribute to loss.
+
+42) scripts/student_step.py:69
+Q: `why tokenize separately and what is ["input_ids"]`
+A: Separate tokenization gives prompt length for precise masking. `"input_ids"` are integer token IDs produced by tokenizer for model input.
+
+43) scripts/student_step.py:81
+Q: `why separate problem and solution, and why IDs`
+A: Separation lets you supervise only the target solution while conditioning on problem text. Models consume token IDs, not raw strings.
+
+44) scripts/student_step.py:84
+Q: `point of eos_id`
+A: Appending EOS teaches explicit sequence termination and can improve generation stopping behavior.
+
+45) scripts/student_step.py:89
+Q: `max_length choice and truncation impact`
+A: `max_length` is set by model context limit and hardware memory budget. Truncation prevents OOM but can drop useful tail tokens, which may hurt learning on long solutions.
+
+46) scripts/student_step.py:97
+Q: `visual example of input_ids and labels`
+A: Toy example:
+- Prompt IDs: `[101, 102, 103]`
+- Solution IDs: `[201, 202]`
+- EOS: `2`
+- `input_ids = [101, 102, 103, 201, 202, 2]`
+- `labels    = [-100, -100, -100, 201, 202, 2]`
+Prompt positions are ignored in loss.
+
+47) scripts/student_step.py:109
+Q: `difference between ids and labs`
+A: `ids` = input token IDs fed to model; `labs` (short for labels) = training targets (`solution IDs` or `-100` mask).
+
+48) scripts/student_step.py:143
+Q: `why optimizer.zero_grad()`
+A: Gradients accumulate by default in PyTorch; `zero_grad()` clears previous step gradients before computing new ones.
+
+
+--------------------------------------------------------------------------------
+
+---------- UNDERSTANDING THE TEACHER MORE ----------
+
+
+Teacher looks at:
+1. where we are in training,
+2. how hard/easy each bucket currently seems,
+3. whether each bucket is improving or not.
+
+Then it outputs:
+a probability distribution over buckets.
+
+Example:
+K = 3 buckets: easy, medium, hard
+
+softmax(logits) = [0.20, 0.55, 0.25]
+
+Meaning:
+20% chance sample from easy
+55% chance sample from medium
+25% chance sample from hard
+
+
+--------
+
+Given:
+
+a_t = [0.20, 0.55, 0.25]
+
+easy   = 20%
+medium = 55%
+hard   = 25%
+
+and suppose your training batch size is:
+
+B = 8
+
+Then for each of the 8 examples in the batch, you first sample a bucket using a_t.
+
+Example sampled buckets:
+
+Example 1 → medium
+Example 2 → easy
+Example 3 → medium
+Example 4 → hard
+Example 5 → medium
+Example 6 → medium
+Example 7 → hard
+Example 8 → medium
+
+So the batch may look like:
+
+training_batch B_t = [
+    one example from medium bucket,
+    one example from easy bucket,
+    one example from medium bucket,
+    one example from hard bucket,
+    one example from medium bucket,
+    one example from medium bucket,
+    one example from hard bucket,
+    one example from medium bucket,
+]
+
+In counts:
+
+easy:   1 example
+medium: 5 examples
+hard:   2 examples
+total:  8 examples
+
+This roughly matches [0.20, 0.55, 0.25], but it will not be exact every time because it is sampled randomly.
+
+The teacher update confusion is important:
+
+At each step t:
+    teacher produces a_t
+    student trains using batch sampled from a_t
+    reward r_t is computed
+    log_prob_t is stored
+
+But teacher parameters φ are NOT updated yet.
+
+After T steps:
+    compute returns q_t
+    compute advantages A_t
+    update teacher once using all stored log_probs and rewards
+
+So the teacher is acting during every step, but learning only after the episode ends.
+
+########## VISUAL GRAND SCHEME ##########
+
+Episode 1 starts
+    t = 0: teacher gives a_0 → sample batch B_0 → train student → get reward r_0
+    t = 1: teacher gives a_1 → sample batch B_1 → train student → get reward r_1
+    t = 2: teacher gives a_2 → sample batch B_2 → train student → get reward r_2
+    ...
+    t = T-1: teacher gives a_T-1 → sample batch B_T-1 → train student → get reward r_T-1
+
+Episode ends
+    use all rewards + log_probs
+    update teacher φ once
+
+So the key idea is: Teacher actions affect the student immediately. Teacher parameters are updated later, after seeing whether those actions helped.
+
+
+
+---- ---- ---- ---- CLARIFICATION ROLE OF TEACHER VS STUDENT in PERFORMANCE ---- ---- ---- ---- 
+
+
+Totally valid confusion. The key is: the teacher is not learning how to answer the math question.
+
+It is learning something much simpler:
+
+Given how the student is doing right now,
+which difficulty bucket should I train it on next?
+
+The student LLM learns the complex token-level math behavior:
+
+problem → reasoning tokens → final answer tokens
+
+The teacher only learns the training schedule:
+
+easy vs medium vs hard sampling
+
+So the teacher is not saying:
+
+“generate these exact correct tokens”
+
+It is saying:
+
+“at this point in training, give the student more medium questions”
+
+A good analogy:
+
+Student = person learning math
+Teacher = tutor choosing the next worksheet
+
+The tutor does not solve inside the student’s brain. The tutor just chooses whether the next worksheet should be easier, similar, or harder.
+
+For example, suppose:
+
+K = 3 buckets
+easy, medium, hard
+
+At step 0, the student is weak. The teacher may output:
+
+[0.70, 0.25, 0.05]
+
+meaning mostly easy questions.
+
+After several updates, easy loss improves, but medium loss is still high. The teacher may output:
+
+[0.20, 0.65, 0.15]
+
+meaning now focus on medium.
+
+Later, once medium improves, it may shift to:
+
+[0.10, 0.35, 0.55]
+
+meaning introduce more hard examples.
+
+So what is being learned is not “math reasoning directly,” but:
+
+Which training examples produce the best validation improvement?
+
+That is why the reward is based on:
+
+val_loss_before - val_loss_after
+
+If sampling more medium questions improves validation loss, the teacher receives positive reward for that choice. If sampling hard questions too early makes training unstable or useless, the reward is small or negative.
+
+In simple terms:
+
+Student learns the answers.
+Teacher learns the curriculum.
+
+Your PoC is testing whether a learned curriculum can beat:
+
+random sampling / uniform bucket sampling
+
+not whether the teacher itself understands math.
+
