@@ -1,0 +1,1016 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Stratified split successful.
+D_tr level distribution:
+  Level 0: 142 examples
+  Level 1: 272 examples
+  Level 2: 314 examples
+  Level 3: 318 examples
+  Level 4: 349 examples
+D_val level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 43 examples
+D_holdout level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 44 examples
+Bucket keys: [0, 1, 2, 3, 4]
+Bucket sizes:
+  0 (0): 142 examples
+  1 (1): 272 examples
+  2 (2): 314 examples
+  3 (3): 318 examples
+  4 (4): 349 examples
+
+
+######## Seed=11 Episode=0 | Curriculum ########
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 17624.51it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Curriculum ===
+Batch loss: 0.925444
+Avg loss per bucket:
+  2: 0.762415
+  4: 0.264439
+Change in loss per bucket:
+  2: 0.000000
+  4: 0.000000
+Train loss: 0.925444
+Val loss before: 0.932452
+Val loss after: 0.883287
+Reward: 0.049166
+Step time: 2.72s
+Teacher bucket probs: [0.2190309762954712, 0.18846485018730164, 0.21029119193553925, 0.18529677391052246, 0.19691631197929382]
+
+=== Step 2/10 | Curriculum ===
+Batch loss: 1.087742
+Avg loss per bucket:
+  2: 0.709771
+  3: 0.410396
+Change in loss per bucket:
+  2: -0.015793
+  3: 0.000000
+Train loss: 1.087742
+Val loss before: 0.973667
+Val loss after: 0.896524
+Reward: 0.077142
+Step time: 1.77s
+Teacher bucket probs: [0.2191433608531952, 0.197646826505661, 0.20974333584308624, 0.18264515697956085, 0.19082124531269073]
+
+=== Step 3/10 | Curriculum ===
+Batch loss: 0.553330
+Avg loss per bucket:
+  1: 0.310604
+  4: 0.398530
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.040227
+Train loss: 0.553330
+Val loss before: 0.928835
+Val loss after: 0.907276
+Reward: 0.021559
+Step time: 1.82s
+Teacher bucket probs: [0.2220226526260376, 0.1895289123058319, 0.2139655500650406, 0.18390275537967682, 0.1905800998210907]
+
+=== Step 4/10 | Curriculum ===
+Batch loss: 0.815905
+Avg loss per bucket:
+  0: 0.613114
+  4: 0.611858
+Change in loss per bucket:
+  0: 0.000000
+  4: 0.092158
+Train loss: 0.815905
+Val loss before: 0.846891
+Val loss after: 0.841595
+Reward: 0.005296
+Step time: 1.75s
+Teacher bucket probs: [0.22334171831607819, 0.18842193484306335, 0.21308192610740662, 0.18498261272907257, 0.1901717633008957]
+
+=== Step 5/10 | Curriculum ===
+Batch loss: 0.507183
+Avg loss per bucket:
+  2: 0.415599
+  4: 0.324352
+Change in loss per bucket:
+  2: -0.099307
+  4: -0.021742
+Train loss: 0.507183
+Val loss before: 0.850518
+Val loss after: 0.848198
+Reward: 0.002321
+Step time: 1.66s
+Teacher bucket probs: [0.22795370221138, 0.18222124874591827, 0.21098074316978455, 0.18661600351333618, 0.1922282874584198]
+
+=== Step 6/10 | Curriculum ===
+Batch loss: 1.120463
+Avg loss per bucket:
+  1: 0.323801
+  2: 1.174709
+Change in loss per bucket:
+  1: 0.003959
+  2: 0.158218
+Train loss: 1.120463
+Val loss before: 0.900378
+Val loss after: 0.905104
+Reward: -0.004727
+Step time: 1.62s
+Teacher bucket probs: [0.22715385258197784, 0.1807287037372589, 0.21314120292663574, 0.18581025302410126, 0.19316591322422028]
+
+=== Step 7/10 | Curriculum ===
+Batch loss: 1.185752
+Avg loss per bucket:
+  2: 0.951083
+  4: 1.091628
+Change in loss per bucket:
+  2: 0.043665
+  4: 0.214964
+Train loss: 1.185752
+Val loss before: 0.764123
+Val loss after: 0.763340
+Reward: 0.000783
+Step time: 1.85s
+Teacher bucket probs: [0.226627916097641, 0.182213693857193, 0.21121691167354584, 0.18717458844184875, 0.19276687502861023]
+
+=== Step 8/10 | Curriculum ===
+Batch loss: 1.087477
+Avg loss per bucket:
+  1: 0.767707
+  2: 0.974618
+Change in loss per bucket:
+  1: 0.135943
+  2: 0.037626
+Train loss: 1.087477
+Val loss before: 0.884702
+Val loss after: 0.884428
+Reward: 0.000274
+Step time: 1.73s
+Teacher bucket probs: [0.22396688163280487, 0.18438531458377838, 0.20953385531902313, 0.18876276910305023, 0.19335119426250458]
+
+=== Step 9/10 | Curriculum ===
+Batch loss: 0.425801
+Avg loss per bucket:
+  0: 0.270896
+  3: 0.397891
+Change in loss per bucket:
+  0: -0.102665
+  3: -0.003752
+Train loss: 0.425801
+Val loss before: 0.891101
+Val loss after: 0.888788
+Reward: 0.002313
+Step time: 1.95s
+Teacher bucket probs: [0.22270192205905914, 0.1862587332725525, 0.20815615355968475, 0.18933619558811188, 0.19354701042175293]
+
+=== Step 10/10 | Curriculum ===
+Batch loss: 0.675348
+Avg loss per bucket:
+  1: 0.750859
+  4: 0.457433
+Change in loss per bucket:
+  1: 0.090106
+  4: -0.039784
+Train loss: 0.675348
+Val loss before: 0.732414
+Val loss after: 0.724908
+Reward: 0.007506
+Step time: 2.40s
+Teacher bucket probs: [0.22246727347373962, 0.18650390207767487, 0.2097100466489792, 0.18859198689460754, 0.19272679090499878]
+
+Teacher updated once at end of episode. Teacher loss: 0.515917
+Updated teacher bucket probabilities: [0.2143232375383377, 0.19255617260932922, 0.20375046133995056, 0.19212567806243896, 0.19724446535110474]
+
+
+######## Seed=11 Episode=0 | Baseline ########
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 5950.71it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Baseline ===
+Batch loss: 0.925444
+Avg loss per bucket:
+  2: 0.765637
+  4: 0.262798
+Change in loss per bucket:
+  2: 0.000000
+  4: 0.000000
+Train loss: 0.925444
+Val loss before: 0.932452
+Val loss after: 0.882742
+Reward: 0.049710
+Step time: 2.02s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 2/10 | Baseline ===
+Batch loss: 1.085697
+Avg loss per bucket:
+  2: 0.710539
+  3: 0.410090
+Change in loss per bucket:
+  2: -0.016530
+  3: 0.000000
+Train loss: 1.085697
+Val loss before: 0.971667
+Val loss after: 0.897053
+Reward: 0.074614
+Step time: 1.76s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 3/10 | Baseline ===
+Batch loss: 0.742735
+Avg loss per bucket:
+  1: 0.333818
+  3: 0.679241
+Change in loss per bucket:
+  1: 0.000000
+  3: 0.080745
+Train loss: 0.742735
+Val loss before: 0.929392
+Val loss after: 0.911488
+Reward: 0.017903
+Step time: 1.87s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 4/10 | Baseline ===
+Batch loss: 0.814603
+Avg loss per bucket:
+  0: 0.620545
+  4: 0.619067
+Change in loss per bucket:
+  0: 0.000000
+  4: 0.106881
+Train loss: 0.814603
+Val loss before: 0.848927
+Val loss after: 0.844650
+Reward: 0.004277
+Step time: 1.77s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 5/10 | Baseline ===
+Batch loss: 0.506251
+Avg loss per bucket:
+  2: 0.416933
+  4: 0.329543
+Change in loss per bucket:
+  2: -0.099652
+  4: -0.012041
+Train loss: 0.506251
+Val loss before: 0.855751
+Val loss after: 0.852005
+Reward: 0.003747
+Step time: 1.64s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 6/10 | Baseline ===
+Batch loss: 0.762905
+Avg loss per bucket:
+  1: 0.531166
+Change in loss per bucket:
+  1: 0.059204
+Train loss: 0.762905
+Val loss before: 0.901932
+Val loss after: 0.901594
+Reward: 0.000339
+Step time: 1.64s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 7/10 | Baseline ===
+Batch loss: 1.180993
+Avg loss per bucket:
+  2: 0.959566
+  4: 1.088124
+Change in loss per bucket:
+  2: 0.093033
+  4: 0.219146
+Train loss: 1.180993
+Val loss before: 0.763557
+Val loss after: 0.761242
+Reward: 0.002315
+Step time: 1.84s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 8/10 | Baseline ===
+Batch loss: 0.686400
+Avg loss per bucket:
+  0: 0.837567
+  1: 0.387167
+Change in loss per bucket:
+  0: 0.065106
+  1: -0.001756
+Train loss: 0.686400
+Val loss before: 0.889749
+Val loss after: 0.887016
+Reward: 0.002733
+Step time: 1.68s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 9/10 | Baseline ===
+Batch loss: 0.423955
+Avg loss per bucket:
+  0: 0.274555
+  3: 0.395870
+Change in loss per bucket:
+  0: -0.123329
+  3: -0.028490
+Train loss: 0.423955
+Val loss before: 0.895351
+Val loss after: 0.890547
+Reward: 0.004804
+Step time: 1.91s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 10/10 | Baseline ===
+Batch loss: 0.655640
+Avg loss per bucket:
+  1: 0.735523
+  4: 0.428600
+Change in loss per bucket:
+  1: 0.103277
+  4: -0.044455
+Train loss: 0.655640
+Val loss before: 0.714840
+Val loss after: 0.707801
+Reward: 0.007039
+Step time: 2.41s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+Stratified split successful.
+D_tr level distribution:
+  Level 0: 142 examples
+  Level 1: 272 examples
+  Level 2: 314 examples
+  Level 3: 318 examples
+  Level 4: 349 examples
+D_val level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 43 examples
+D_holdout level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 44 examples
+Bucket keys: [0, 1, 2, 3, 4]
+Bucket sizes:
+  0 (0): 142 examples
+  1 (1): 272 examples
+  2 (2): 314 examples
+  3 (3): 318 examples
+  4 (4): 349 examples
+
+
+######## Seed=22 Episode=0 | Curriculum ########
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 8229.52it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Curriculum ===
+Batch loss: 0.813971
+Avg loss per bucket:
+  1: 0.310974
+  4: 0.750722
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.000000
+Train loss: 0.813971
+Val loss before: 0.881764
+Val loss after: 0.827990
+Reward: 0.053774
+Step time: 1.83s
+Teacher bucket probs: [0.2037883996963501, 0.25866639614105225, 0.19763559103012085, 0.17267648875713348, 0.16723313927650452]
+
+=== Step 2/10 | Curriculum ===
+Batch loss: 0.829921
+Avg loss per bucket:
+  4: 0.531127
+Change in loss per bucket:
+  4: -0.065879
+Train loss: 0.829921
+Val loss before: 0.909012
+Val loss after: 0.844309
+Reward: 0.064703
+Step time: 1.95s
+Teacher bucket probs: [0.1975051611661911, 0.27764809131622314, 0.18379998207092285, 0.17736345529556274, 0.16368331015110016]
+
+=== Step 3/10 | Curriculum ===
+Batch loss: 0.596478
+Avg loss per bucket:
+  1: 0.401717
+  2: 0.294400
+Change in loss per bucket:
+  1: 0.027223
+  2: 0.000000
+Train loss: 0.596478
+Val loss before: 0.775778
+Val loss after: 0.761770
+Reward: 0.014008
+Step time: 1.76s
+Teacher bucket probs: [0.19617563486099243, 0.27563929557800293, 0.18459999561309814, 0.18131162226200104, 0.16227340698242188]
+
+=== Step 4/10 | Curriculum ===
+Batch loss: 0.988223
+Avg loss per bucket:
+  1: 1.042964
+  2: 0.509168
+Change in loss per bucket:
+  1: 0.211430
+  2: 0.064431
+Train loss: 0.988223
+Val loss before: 0.831990
+Val loss after: 0.830695
+Reward: 0.001295
+Step time: 1.90s
+Teacher bucket probs: [0.19405893981456757, 0.28053784370422363, 0.18183086812496185, 0.1810842752456665, 0.16248808801174164]
+
+=== Step 5/10 | Curriculum ===
+Batch loss: 0.931567
+Avg loss per bucket:
+  3: 0.746722
+Change in loss per bucket:
+  3: 0.000000
+Train loss: 0.931567
+Val loss before: 0.897103
+Val loss after: 0.904362
+Reward: -0.007258
+Step time: 1.85s
+Teacher bucket probs: [0.19658532738685608, 0.2902287542819977, 0.1767800897359848, 0.1744779795408249, 0.16192786395549774]
+
+=== Step 6/10 | Curriculum ===
+Batch loss: 0.471804
+Avg loss per bucket:
+  3: 0.534172
+  4: 0.335493
+Change in loss per bucket:
+  3: -0.063765
+  4: -0.104805
+Train loss: 0.471804
+Val loss before: 0.944752
+Val loss after: 0.948691
+Reward: -0.003938
+Step time: 2.02s
+Teacher bucket probs: [0.18796789646148682, 0.30859795212745667, 0.17138876020908356, 0.1744973510503769, 0.15754808485507965]
+
+=== Step 7/10 | Curriculum ===
+Batch loss: 0.674117
+Avg loss per bucket:
+  1: 0.440686
+  2: 0.671043
+Change in loss per bucket:
+  1: -0.032682
+  2: 0.093664
+Train loss: 0.674117
+Val loss before: 0.880769
+Val loss after: 0.871150
+Reward: 0.009619
+Step time: 1.75s
+Teacher bucket probs: [0.18742209672927856, 0.3052900433540344, 0.17367853224277496, 0.17653575539588928, 0.15707358717918396]
+
+=== Step 8/10 | Curriculum ===
+Batch loss: 0.837876
+Avg loss per bucket:
+  3: 0.663853
+Change in loss per bucket:
+  3: -0.005731
+Train loss: 0.837876
+Val loss before: 0.993152
+Val loss after: 0.989997
+Reward: 0.003155
+Step time: 1.77s
+Teacher bucket probs: [0.18352019786834717, 0.3040030896663666, 0.17250414192676544, 0.18352633714675903, 0.156446173787117]
+
+=== Step 9/10 | Curriculum ===
+Batch loss: 1.051551
+Avg loss per bucket:
+  2: 0.845858
+Change in loss per bucket:
+  2: 0.118009
+Train loss: 1.051551
+Val loss before: 0.661107
+Val loss after: 0.657188
+Reward: 0.003919
+Step time: 1.95s
+Teacher bucket probs: [0.18375004827976227, 0.3043787479400635, 0.172146737575531, 0.1846252828836441, 0.15509924292564392]
+
+=== Step 10/10 | Curriculum ===
+Batch loss: 1.077986
+Avg loss per bucket:
+  0: 1.006047
+  2: 0.704077
+Change in loss per bucket:
+  0: 0.000000
+  2: 0.040072
+Train loss: 1.077986
+Val loss before: 0.863011
+Val loss after: 0.860805
+Reward: 0.002205
+Step time: 2.05s
+Teacher bucket probs: [0.17967382073402405, 0.30781254172325134, 0.17253310978412628, 0.18587356805801392, 0.15410694479942322]
+
+Teacher updated once at end of episode. Teacher loss: -1.457651
+Updated teacher bucket probabilities: [0.18248103559017181, 0.32690855860710144, 0.15312598645687103, 0.1783348172903061, 0.1591496467590332]
+
+
+######## Seed=22 Episode=0 | Baseline ########
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 5923.43it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Baseline ===
+Batch loss: 0.813971
+Avg loss per bucket:
+  1: 0.312592
+  4: 0.751485
+Change in loss per bucket:
+  1: 0.000000
+  4: -0.000000
+Train loss: 0.813971
+Val loss before: 0.881764
+Val loss after: 0.829235
+Reward: 0.052529
+Step time: 1.92s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 2/10 | Baseline ===
+Batch loss: 0.829955
+Avg loss per bucket:
+  4: 0.531023
+Change in loss per bucket:
+  4: -0.066139
+Train loss: 0.829955
+Val loss before: 0.908436
+Val loss after: 0.845280
+Reward: 0.063155
+Step time: 2.04s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 3/10 | Baseline ===
+Batch loss: 1.004393
+Avg loss per bucket:
+  0: 0.839069
+  3: 0.633823
+Change in loss per bucket:
+  0: 0.000000
+  3: 0.000000
+Train loss: 1.004393
+Val loss before: 0.775649
+Val loss after: 0.766750
+Reward: 0.008899
+Step time: 1.89s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 4/10 | Baseline ===
+Batch loss: 0.908198
+Avg loss per bucket:
+  1: 0.768867
+Change in loss per bucket:
+  1: 0.136882
+Train loss: 0.908198
+Val loss before: 0.835198
+Val loss after: 0.831257
+Reward: 0.003941
+Step time: 1.99s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 5/10 | Baseline ===
+Batch loss: 0.931561
+Avg loss per bucket:
+  3: 0.745456
+Change in loss per bucket:
+  3: 0.033490
+Train loss: 0.931561
+Val loss before: 0.895410
+Val loss after: 0.897647
+Reward: -0.002238
+Step time: 1.93s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 6/10 | Baseline ===
+Batch loss: 0.482230
+Avg loss per bucket:
+  3: 0.573843
+  4: 0.329589
+Change in loss per bucket:
+  3: -0.028041
+  4: -0.106727
+Train loss: 0.482230
+Val loss before: 0.934684
+Val loss after: 0.933191
+Reward: 0.001493
+Step time: 2.12s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 7/10 | Baseline ===
+Batch loss: 0.801478
+Avg loss per bucket:
+  0: 0.702728
+  2: 0.630371
+Change in loss per bucket:
+  0: -0.040902
+  2: 0.000000
+Train loss: 0.801478
+Val loss before: 0.876490
+Val loss after: 0.870158
+Reward: 0.006332
+Step time: 1.86s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 8/10 | Baseline ===
+Batch loss: 0.812228
+Avg loss per bucket:
+  2: 0.626060
+Change in loss per bucket:
+  2: -0.001293
+Train loss: 0.812228
+Val loss before: 1.006609
+Val loss after: 1.002940
+Reward: 0.003669
+Step time: 1.92s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 9/10 | Baseline ===
+Batch loss: 0.639620
+Avg loss per bucket:
+  2: 0.678793
+  3: 0.496870
+Change in loss per bucket:
+  2: 0.014915
+  3: -0.042721
+Train loss: 0.639620
+Val loss before: 0.661161
+Val loss after: 0.650313
+Reward: 0.010848
+Step time: 2.10s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 10/10 | Baseline ===
+Batch loss: 1.120068
+Avg loss per bucket:
+  0: 1.123285
+  3: 0.918511
+Change in loss per bucket:
+  0: 0.097536
+  3: 0.096588
+Train loss: 1.120068
+Val loss before: 0.832926
+Val loss after: 0.825041
+Reward: 0.007886
+Step time: 2.16s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+Stratified split successful.
+D_tr level distribution:
+  Level 0: 142 examples
+  Level 1: 272 examples
+  Level 2: 314 examples
+  Level 3: 318 examples
+  Level 4: 349 examples
+D_val level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 43 examples
+D_holdout level distribution:
+  Level 0: 18 examples
+  Level 1: 34 examples
+  Level 2: 39 examples
+  Level 3: 40 examples
+  Level 4: 44 examples
+Bucket keys: [0, 1, 2, 3, 4]
+Bucket sizes:
+  0 (0): 142 examples
+  1 (1): 272 examples
+  2 (2): 314 examples
+  3 (3): 318 examples
+  4 (4): 349 examples
+
+
+######## Seed=33 Episode=0 | Curriculum ########
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 5970.81it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Curriculum ===
+Batch loss: 0.655462
+Avg loss per bucket:
+  2: 0.474858
+  3: 0.163099
+Change in loss per bucket:
+  2: 0.000000
+  3: 0.000000
+Train loss: 0.655462
+Val loss before: 1.071079
+Val loss after: 1.002815
+Reward: 0.068263
+Step time: 1.86s
+Teacher bucket probs: [0.20726540684700012, 0.21107426285743713, 0.20583726465702057, 0.178415447473526, 0.1974075734615326]
+
+=== Step 2/10 | Curriculum ===
+Batch loss: 1.477578
+Avg loss per bucket:
+  0: 1.020133
+  2: 0.712178
+Change in loss per bucket:
+  0: 0.000000
+  2: 0.071196
+Train loss: 1.477578
+Val loss before: 0.999921
+Val loss after: 0.941812
+Reward: 0.058109
+Step time: 1.86s
+Teacher bucket probs: [0.21074026823043823, 0.20557717978954315, 0.2060307413339615, 0.18200992047786713, 0.1956419050693512]
+
+=== Step 3/10 | Curriculum ===
+Batch loss: 0.603972
+Avg loss per bucket:
+  2: 0.227826
+  3: 0.475115
+Change in loss per bucket:
+  2: -0.095468
+  3: 0.093605
+Train loss: 0.603972
+Val loss before: 0.966192
+Val loss after: 0.953511
+Reward: 0.012681
+Step time: 1.85s
+Teacher bucket probs: [0.1988292932510376, 0.21983222663402557, 0.18503274023532867, 0.1978444904088974, 0.19846126437187195]
+
+=== Step 4/10 | Curriculum ===
+Batch loss: 0.777997
+Avg loss per bucket:
+  1: 0.591021
+  4: 0.579687
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.000000
+Train loss: 0.777997
+Val loss before: 0.908114
+Val loss after: 0.906548
+Reward: 0.001565
+Step time: 1.89s
+Teacher bucket probs: [0.20048509538173676, 0.21683861315250397, 0.18517480790615082, 0.19509577751159668, 0.20240569114685059]
+
+=== Step 5/10 | Curriculum ===
+Batch loss: 0.692617
+Avg loss per bucket:
+  3: 0.553019
+  4: 0.597495
+Change in loss per bucket:
+  3: 0.088894
+  4: 0.005342
+Train loss: 0.692617
+Val loss before: 0.865851
+Val loss after: 0.874402
+Reward: -0.008551
+Step time: 2.11s
+Teacher bucket probs: [0.18691383302211761, 0.22034066915512085, 0.17212028801441193, 0.20951326191425323, 0.21111193299293518]
+
+=== Step 6/10 | Curriculum ===
+Batch loss: 1.201062
+Avg loss per bucket:
+  3: 1.049534
+Change in loss per bucket:
+  3: 0.211181
+Train loss: 1.201062
+Val loss before: 0.898886
+Val loss after: 0.892764
+Reward: 0.006122
+Step time: 1.88s
+Teacher bucket probs: [0.1884586066007614, 0.22179673612117767, 0.1725836992263794, 0.20559543371200562, 0.21156558394432068]
+
+=== Step 7/10 | Curriculum ===
+Batch loss: 0.960729
+Avg loss per bucket:
+  0: 0.694950
+  1: 0.857776
+Change in loss per bucket:
+  0: -0.097555
+  1: 0.080026
+Train loss: 0.960729
+Val loss before: 0.869305
+Val loss after: 0.867930
+Reward: 0.001375
+Step time: 1.76s
+Teacher bucket probs: [0.1896085888147354, 0.22419865429401398, 0.17287993431091309, 0.2011377513408661, 0.21217501163482666]
+
+=== Step 8/10 | Curriculum ===
+Batch loss: 1.272019
+Avg loss per bucket:
+  0: nan
+  2: 1.090541
+Change in loss per bucket:
+  0: nan
+  2: 0.191987
+Train loss: 1.272019
+Val loss before: 0.736014
+Val loss after: 0.735687
+Reward: 0.000327
+Step time: 2.10s
+Teacher bucket probs: [0.19167578220367432, 0.22491022944450378, 0.1713414192199707, 0.20148040354251862, 0.21059218049049377]
+
+=== Step 9/10 | Curriculum ===
+[WARNING] Non-finite or non-positive values in Dirichlet concentration. Fixed to 1e-3.
+Batch loss: 0.894562
+Avg loss per bucket:
+  1: 0.823611
+  4: 0.701500
+Change in loss per bucket:
+  1: 0.045769
+  4: 0.034941
+Train loss: 0.894562
+Val loss before: 0.864284
+Val loss after: 0.859751
+Reward: 0.004533
+Step time: 1.99s
+Teacher bucket probs: [nan, nan, nan, nan, nan]
+
+=== Step 10/10 | Curriculum ===
+[WARNING] Non-finite or non-positive values in Dirichlet concentration. Fixed to 1e-3.
+Batch loss: 0.766069
+Avg loss per bucket:
+  2: 0.738827
+Change in loss per bucket:
+  2: 0.028876
+Train loss: 0.766069
+Val loss before: 0.736591
+Val loss after: 0.732450
+Reward: 0.004141
+Step time: 2.12s
+Teacher bucket probs: [nan, nan, nan, nan, nan]
+
+Teacher updated once at end of episode. Teacher loss: -17.103460
+Updated teacher bucket probabilities: [nan, nan, nan, nan, nan]
+
+
+######## Seed=33 Episode=0 | Baseline ########
+Loading weights: 100%|██████████| 320/320 [00:00<00:00, 6008.71it/s]
+Validation batch size: 8
+Held-out batch size: 8
+
+=== Step 1/10 | Baseline ===
+Batch loss: 1.014100
+Avg loss per bucket:
+  2: 0.559259
+  4: 0.491750
+Change in loss per bucket:
+  2: 0.000000
+  4: -0.000000
+Train loss: 1.014100
+Val loss before: 1.071079
+Val loss after: 0.997979
+Reward: 0.073100
+Step time: 1.90s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 2/10 | Baseline ===
+Batch loss: 1.450478
+Avg loss per bucket:
+  0: 1.011812
+  2: 0.667319
+Change in loss per bucket:
+  0: 0.000000
+  2: 0.032418
+Train loss: 1.450478
+Val loss before: 0.986090
+Val loss after: 0.934993
+Reward: 0.051097
+Step time: 1.86s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 3/10 | Baseline ===
+Batch loss: 0.611533
+Avg loss per bucket:
+  2: 0.249359
+  3: 0.461447
+Change in loss per bucket:
+  2: -0.102695
+  3: 0.000000
+Train loss: 0.611533
+Val loss before: 0.956781
+Val loss after: 0.940881
+Reward: 0.015900
+Step time: 1.85s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 4/10 | Baseline ===
+Batch loss: 0.779534
+Avg loss per bucket:
+  1: 0.619238
+  4: 0.574566
+Change in loss per bucket:
+  1: 0.000000
+  4: 0.024845
+Train loss: 0.779534
+Val loss before: 0.900514
+Val loss after: 0.897192
+Reward: 0.003322
+Step time: 1.87s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 5/10 | Baseline ===
+Batch loss: 0.704622
+Avg loss per bucket:
+  3: 0.573064
+  4: 0.602262
+Change in loss per bucket:
+  3: 0.033485
+  4: 0.025700
+Train loss: 0.704622
+Val loss before: 0.861455
+Val loss after: 0.868125
+Reward: -0.006670
+Step time: 2.10s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 6/10 | Baseline ===
+Batch loss: 1.180747
+Avg loss per bucket:
+  3: 1.032461
+Change in loss per bucket:
+  3: 0.161259
+Train loss: 1.180747
+Val loss before: 0.888495
+Val loss after: 0.884193
+Reward: 0.004303
+Step time: 1.88s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 7/10 | Baseline ===
+Batch loss: 0.957828
+Avg loss per bucket:
+  0: 0.696592
+  1: 0.837935
+Change in loss per bucket:
+  0: -0.094566
+  1: 0.065609
+Train loss: 0.957828
+Val loss before: 0.868491
+Val loss after: 0.865474
+Reward: 0.003017
+Step time: 1.75s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 8/10 | Baseline ===
+Batch loss: 1.267464
+Avg loss per bucket:
+  0: nan
+  2: 1.079666
+Change in loss per bucket:
+  0: nan
+  2: 0.177205
+Train loss: 1.267464
+Val loss before: 0.736910
+Val loss after: 0.734358
+Reward: 0.002552
+Step time: 2.10s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 9/10 | Baseline ===
+Batch loss: 0.897435
+Avg loss per bucket:
+  1: 0.831235
+  4: 0.696882
+Change in loss per bucket:
+  1: 0.043916
+  4: 0.046376
+Train loss: 0.897435
+Val loss before: 0.868612
+Val loss after: 0.863284
+Reward: 0.005328
+Step time: 2.16s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+=== Step 10/10 | Baseline ===
+Batch loss: 0.694193
+Avg loss per bucket:
+  3: 0.623329
+Change in loss per bucket:
+  3: -0.009859
+Train loss: 0.694193
+Val loss before: 0.734662
+Val loss after: 0.729658
+Reward: 0.005003
+Step time: 2.47s
+Teacher bucket probs: [0.2, 0.2, 0.2, 0.2, 0.2]
+
+===== Curriculum (REINFORCE Teacher) Summary =====
+Runs: 3
+Avg final held-out test loss: 1.110799
+Avg final held-out test accuracy: 0.003893
+Avg convergence step: 5.33
+Avg step time (seconds): 1.92
+
+===== Vanilla SFT Baseline Summary =====
+Runs: 3
+Avg final held-out test loss: 1.104184
+Avg final held-out test accuracy: 0.003486
+Avg convergence step: 10.00
+Avg step time (seconds): 1.95

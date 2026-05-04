@@ -1,0 +1,248 @@
+_wandb:
+    value:
+        cli_version: 0.26.1
+        e:
+            1udxoi8es74gaulc9ekntq6jsfnly4kh:
+                args:
+                    - --device
+                    - cuda
+                    - --steps
+                    - "50"
+                    - --batch_size
+                    - "2"
+                    - --val_batch_size
+                    - "16"
+                    - --gamma
+                    - "0.99"
+                    - --teacher_hidden_dim
+                    - "32"
+                    - --use_baseline
+                    - "1"
+                    - --baseline_type
+                    - mean_return
+                    - --normalize_advantage
+                    - "1"
+                    - --wandb
+                    - "1"
+                    - --wandb_project
+                    - cl-rl
+                    - --wandb_entity
+                    - CL-and-RL
+                    - --wandb_run_name
+                    - small_valid_50steps_b2_val16_2026_04_30_02_53
+                codePath: scripts/training_loop.py
+                codePathLocal: scripts/training_loop.py
+                cpu_count: 128
+                cpu_count_logical: 128
+                cudaVersion: "13.1"
+                disk:
+                    /:
+                        total: "957391949824"
+                        used: "41623216128"
+                email: ae2195@nyu.edu
+                executable: /home/aya.elmir/.conda/envs/cl_rl_env/bin/python
+                git:
+                    commit: f76a442dd77126ec8aea70d1f9fd7bb6b5e023f7
+                    remote: https://github.com/Aya0813/cl_and_rl.git
+                gpu: NVIDIA A100-SXM4-80GB
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "85899345920"
+                      name: NVIDIA A100-SXM4-80GB
+                      uuid: GPU-77b9aa88-0fc5-15c6-7ff7-109837b38f65
+                host: gpuhigh-22
+                memory:
+                    total: "1081452462080"
+                os: Linux-6.8.0-90-generic-x86_64-with-glibc2.39
+                program: /home/aya.elmir/cl_and_rl/scripts/training_loop.py
+                python: CPython 3.10.20
+                root: /home/aya.elmir/cl_and_rl
+                slurm:
+                    cluster_name: cluster
+                    conf: /var/spool/slurm/d/conf-cache/slurm.conf
+                    cpus_on_node: "4"
+                    cpus_per_task: "4"
+                    gpus_on_node: "1"
+                    gtids: "0"
+                    job_account: inception-energy-llm
+                    job_cpus_per_node: "4"
+                    job_end_time: "1777604025"
+                    job_gid: "923000513"
+                    job_gpus: "0"
+                    job_id: "154073"
+                    job_name: run_50_steps_2026_04_30_02_53
+                    job_nodelist: gpuhigh-22
+                    job_num_nodes: "1"
+                    job_partition: gpuhigh2
+                    job_qos: normal
+                    job_start_time: "1777517625"
+                    job_uid: "923009628"
+                    job_user: aya.elmir
+                    jobid: "154073"
+                    localid: "0"
+                    mem_per_node: "32768"
+                    nnodes: "1"
+                    nodeid: "0"
+                    nodelist: gpuhigh-22
+                    nprocs: "1"
+                    ntasks: "1"
+                    oom_kill_step: "0"
+                    prio_process: "0"
+                    procid: "0"
+                    submit_dir: /home/aya.elmir/cl_and_rl
+                    submit_host: cscc-login-1
+                    task_pid: "2454701"
+                    tasks_per_node: "1"
+                    topology_addr: gpuhigh-22
+                    topology_addr_pattern: node
+                    tres_per_task: cpu=4
+                startedAt: "2026-04-30T02:53:55.030433Z"
+                writerId: 1udxoi8es74gaulc9ekntq6jsfnly4kh
+        m: []
+        python_version: 3.10.20
+        t:
+            "1":
+                - 1
+                - 11
+                - 49
+                - 51
+            "2":
+                - 1
+                - 11
+                - 49
+                - 51
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.10.20
+            "5": 0.26.1
+            "6": 5.7.0
+            "12": 0.26.1
+            "13": linux-x86_64
+        visualize:
+            teacher_probs_curve:
+                panel_config:
+                    fieldSettings:
+                        lineKey: lineKey
+                        lineVal: lineVal
+                        step: step
+                    panelDefId: wandb/lineseries/v0
+                    stringSettings:
+                        title: Teacher Bucket Probabilities (curriculum)
+                        xname: Step
+                    transform:
+                        name: tableWithLeafColNames
+                    userQuery:
+                        queryFields:
+                            - args:
+                                - name: runSets
+                                  value: ${runSets}
+                              fields:
+                                - fields: []
+                                  name: id
+                                - fields: []
+                                  name: name
+                                - fields: []
+                                  name: _defaultColorIndex
+                                - args:
+                                    - name: tableKey
+                                      value: teacher_probs_curve_table
+                                  fields: []
+                                  name: summaryTable
+                              name: runSets
+                panel_type: Vega2
+            val_acc_curve:
+                panel_config:
+                    fieldSettings:
+                        lineKey: lineKey
+                        lineVal: lineVal
+                        step: step
+                    panelDefId: wandb/lineseries/v0
+                    stringSettings:
+                        title: Validation Accuracy Curve (baseline)
+                        xname: Step
+                    transform:
+                        name: tableWithLeafColNames
+                    userQuery:
+                        queryFields:
+                            - args:
+                                - name: runSets
+                                  value: ${runSets}
+                              fields:
+                                - fields: []
+                                  name: id
+                                - fields: []
+                                  name: name
+                                - fields: []
+                                  name: _defaultColorIndex
+                                - args:
+                                    - name: tableKey
+                                      value: val_acc_curve_table
+                                  fields: []
+                                  name: summaryTable
+                              name: runSets
+                panel_type: Vega2
+            val_loss_curve:
+                panel_config:
+                    fieldSettings:
+                        lineKey: lineKey
+                        lineVal: lineVal
+                        step: step
+                    panelDefId: wandb/lineseries/v0
+                    stringSettings:
+                        title: Validation Loss Curve (baseline)
+                        xname: Step
+                    transform:
+                        name: tableWithLeafColNames
+                    userQuery:
+                        queryFields:
+                            - args:
+                                - name: runSets
+                                  value: ${runSets}
+                              fields:
+                                - fields: []
+                                  name: id
+                                - fields: []
+                                  name: name
+                                - fields: []
+                                  name: _defaultColorIndex
+                                - args:
+                                    - name: tableKey
+                                      value: val_loss_curve_table
+                                  fields: []
+                                  name: summaryTable
+                              name: runSets
+                panel_type: Vega2
+alpha_stability:
+    value: 0
+baseline_type:
+    value: mean_return
+batch_size:
+    value: 2
+device:
+    value: cuda
+gamma:
+    value: 0.99
+lambda_cost:
+    value: 0
+max_length:
+    value: 512
+normalize_advantage:
+    value: true
+steps:
+    value: 50
+student_lr:
+    value: 1e-05
+student_model_name:
+    value: Qwen/Qwen3.5-0.8B
+teacher_hidden_dim:
+    value: 32
+teacher_lr:
+    value: 0.001
+use_baseline:
+    value: true
+val_batch_size:
+    value: 16

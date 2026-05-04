@@ -1,0 +1,1 @@
+{"reward":0.002420365810394287,"_wandb":{"runtime":59},"_runtime":59,"method":"curriculum","episode_id":0,"_timestamp":1.777515066303486e+09,"_step":9,"seed":11,"val_loss_after":0.8547864556312561,"step":10,"step_time_sec":4.996757977642119,"curve_loss":0.8764097094535828,"curve_acc":0.004327301401644945,"val_loss_before":0.8572068214416504,"train_loss":0.7992561459541321}

@@ -460,8 +460,9 @@ def run_episode(
     
         # [ TO DIVE INTO IT DEEPLY LATER ]
         convergence_step = 1 + min(range(len(val_loss_curve)), key=lambda i: val_loss_curve[i]) # this line finds the index of the step where the validation loss was lowest, which we can interpret as the point of convergence or best performance during training. By adding 1, we convert from a 0-based index to a 1-based step number for easier interpretation (e.g., "convergence at step 5" instead of "convergence at index 4"). This metric can help us understand how quickly the student model improved during training and whether the teacher's curriculum decisions led to faster convergence compared to the baseline.
-        if enable_wandb and wandb is not None and wandb.run is not None:  # log final episode metrics when wandb is active
-            wandb.log({  # send final episode summary payload
+        if enable_wandb and wandb is not None and wandb.run is not None:  # log final episode metrics and curves to wandb
+            # Log final episode summary
+            wandb.log({
                 "method": "curriculum" if use_teacher else "baseline",  # tag run branch in logs
                 "seed": seed,  # include seed for grouping
                 "episode_id": episode_id,  # include episode identifier
@@ -469,7 +470,43 @@ def run_episode(
                 "final_test_acc": final_test_acc,  # held-out final test accuracy
                 "convergence_step": convergence_step,  # best validation-loss step index
                 "avg_step_time": mean(step_time_history),  # average per-step runtime
-            })  # close episode-level wandb payload
+            })
+
+            # Log validation loss and accuracy curves as wandb plots
+            # These will appear as line plots in the wandb dashboard, one for each run (curriculum/baseline)
+            wandb.log({
+                "val_loss_curve": wandb.plot.line_series(
+                    xs=list(range(1, len(val_loss_curve) + 1)),
+                    ys=[val_loss_curve],
+                    keys=["val_loss"],
+                    title=f"Validation Loss Curve ({'curriculum' if use_teacher else 'baseline'})",
+                    xname="Step"
+                ),
+                "val_acc_curve": wandb.plot.line_series(
+                    xs=list(range(1, len(val_acc_curve) + 1)),
+                    ys=[val_acc_curve],
+                    keys=["val_acc"],
+                    title=f"Validation Accuracy Curve ({'curriculum' if use_teacher else 'baseline'})",
+                    xname="Step"
+                ),
+            })
+
+            # Log teacher's probability distribution over time (only for curriculum runs)
+            if use_teacher and teacher_probs_history and len(teacher_probs_history) > 0:
+                # teacher_probs_history: list of lists, shape [steps, num_buckets]
+                num_buckets = len(teacher_probs_history[0])
+                xs = list(range(1, len(teacher_probs_history) + 1))
+                ys = list(zip(*teacher_probs_history))  # shape: [num_buckets][steps]
+                keys = [f"bucket_{i}" for i in range(num_buckets)]
+                wandb.log({
+                    "teacher_probs_curve": wandb.plot.line_series(
+                        xs=xs,
+                        ys=ys,
+                        keys=keys,
+                        title="Teacher Bucket Probabilities (curriculum)",
+                        xname="Step"
+                    )
+                })
 
         return {
             "method": "curriculum" if use_teacher else "baseline",
@@ -700,17 +737,18 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_project", type=str, default="cl-rl")  # wandb project name
     parser.add_argument("--wandb_entity", type=str, default=None)  # optional wandb account/team -> FOR ME IT WILL BE Omar and I's shared team name on wandb -> "CL-and-RL"
     parser.add_argument("--wandb_run_name", type=str, default=None)  # optional custom run name
+    parser.add_argument("--episodes", type=int, default=1)
     args = parser.parse_args()
 
     run_final_evaluation(
         seeds=(11, 22, 33),
-        episodes=1,
+        episodes=args.episodes,
         T=args.steps,
         B=args.batch_size,
         val_batch_size=args.val_batch_size,
         student_model_name="Qwen/Qwen3.5-0.8B",
         student_lr=1e-5,
-        teacher_lr=1e-2,
+        teacher_lr=1e-3,
         teacher_hidden_dim=args.teacher_hidden_dim,
         gamma=args.gamma,
         lambda_cost=args.lambda_cost,

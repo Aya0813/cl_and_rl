@@ -120,6 +120,7 @@ def teacher_policy_probs(teacher_model, observation):
     return torch.softmax(logits, dim=0) # We use softmax to convert the raw logits output by the teacher model into a valid probability distribution over the buckets. The softmax function takes a vector of real-valued logits and transforms it into a vector of probabilities that sum to 1. This is essential because we want to sample actions (bucket selections) according to these probabilities, and they need to be non-negative and sum to 1 for that sampling process to be meaningful. By applying softmax, we ensure that the teacher's policy outputs a proper distribution over the buckets based on the current observation.
     # The teacher_policy_probs function is a crucial component of the REINFORCE algorithm as it defines the policy that the teacher uses to select actions (bucket selections) based on the current observation. In REINFORCE, we need to compute the log probabilities of the actions taken by the teacher in order to calculate the policy gradient and update the teacher's parameters. The probabilities returned by this function are used to sample actions and compute log probabilities, which are then used in the REINFORCE update step to optimize the teacher's policy based on the rewards received from the environment (the student's performance). Therefore, this function directly influences how the teacher learns to select buckets that will maximize the student's learning progress over time.
 
+
 def sample_teacher_action(teacher_model, observation, concentration_scale=20.0): # [ TO CONFIRM ] 
     """
     Sample a_t (distribution over buckets) from Dirichlet policy.  [ TO DIVE INTO IT DEEPLY LATER ]
@@ -132,9 +133,21 @@ def sample_teacher_action(teacher_model, observation, concentration_scale=20.0):
     """
 
     probs = teacher_policy_probs(teacher_model, observation)
-    concentration = probs * concentration_scale + 1e-4 # This line is scaling the probabilities output by the teacher model to create the concentration parameters for the Dirichlet distribution. The concentration parameters determine how peaked or flat the distribution is. By multiplying the probabilities by a concentration_scale (e.g., 20.0), we can control the level of exploration in the sampling process. A higher concentration_scale will lead to a more peaked distribution, meaning that the teacher will be more likely to select buckets with higher probabilities, while a lower concentration_scale will lead to a flatter distribution, allowing for more exploration of different buckets. The addition of 1e-4 is a small constant added to ensure numerical stability and prevent issues with zero probabilities when creating the Dirichlet distribution.
+    concentration = probs * concentration_scale + 1e-4
+
+    # Robust check: ensure all concentration values are finite and > 0
+    if not torch.isfinite(concentration).all() or (concentration <= 0).any():
+        # Replace NaNs or non-positive values with a small positive constant
+        concentration = torch.where(
+            torch.isfinite(concentration) & (concentration > 0),
+            concentration,
+            torch.full_like(concentration, 1e-3)
+        )
+        
+        print("[WARNING] Non-finite or non-positive values in Dirichlet concentration. Fixed to 1e-3.")
+
     dist = torch.distributions.Dirichlet(concentration)
-    a_t = dist.rsample() # We use rsample() instead of sample() because rsample() allows for reparameterization, which is necessary for backpropagation through the sampling process. In the REINFORCE algorithm, we need to compute gradients with respect to the teacher's parameters based on the actions taken and the rewards received. By using rsample(), we can backpropagate through the sampled action a_t and compute the policy gradient effectively. If we were to use sample(), we would not be able to compute gradients with respect to the teacher's parameters, which would prevent us from updating the teacher's policy based on the observed rewards.
+    a_t = dist.rsample()
     log_prob_t = dist.log_prob(a_t)
     return a_t.detach().cpu().tolist(), log_prob_t, probs.detach().cpu().tolist() 
     # We are returning three things from the sample_teacher_action function:
@@ -143,6 +156,10 @@ def sample_teacher_action(teacher_model, observation, concentration_scale=20.0):
         # 3. probs: This is the current mean bucket probabilities output by the teacher model, which is also detached from the computation graph and moved to the CPU and converted to a list. This can be useful for logging or analysis purposes to see what the teacher's current beliefs are about the bucket probabilities at the time of sampling the action.
         # note = it will work with .cpu() even when running on HPC. The reason we use .cpu() is to ensure that the sampled action and probabilities are in a format that can be easily used for further processing, such as sampling from the data sampler or logging. When we detach the tensors from the computation graph and move them to the CPU, we can convert them to Python lists, which are more convenient for certain operations that may not require GPU tensors. This does not affect the training process on the GPU, as the teacher model and its parameters will still be on the GPU for efficient computation. The .cpu() call simply ensures that the outputs we need for sampling and logging are in a compatible format without interfering with the GPU computations of the teacher model.
         # The computation graph is a data structure used in automatic differentiation frameworks like PyTorch to keep track of the operations performed on tensors and how they are connected. When we perform operations on tensors, PyTorch builds a computation graph that records the sequence of operations and the dependencies between tensors. This graph allows PyTorch to compute gradients efficiently during backpropagation by traversing the graph in reverse order. When we call .detach() on a tensor, we are telling PyTorch to stop tracking operations on that tensor and to treat it as a constant for the purposes of gradient computation. This means that any operations performed on the detached tensor will not be recorded in the computation graph, and gradients will not be computed for it during backpropagation. This is useful when we want to use certain values (like sampled actions or probabilities) without affecting the gradient flow for the teacher model's parameters.
+
+
+
+
 
 def compute_stability_penalty_kl(a_t, p, eps=1e-8):
     """

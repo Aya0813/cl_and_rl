@@ -4,3 +4,6 @@ __pycache__/
 data/
 *.pt
 *.bin
+logs/
+/home/aya.elmir/cl_and_rl/question_answers_hashqq.txt
+/home/aya.elmir/cl_and_rl/wandb/
