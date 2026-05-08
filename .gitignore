@@ -1,9 +1,12 @@
 .venv/
 __pycache__/
 *.pyc
+
 data/
+logs/
+wandb/
+
 *.pt
 *.bin
-logs/
-/home/aya.elmir/cl_and_rl/question_answers_hashqq.txt
-/home/aya.elmir/cl_and_rl/wandb/
+
+question_answers_hashqq.txt

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=run_5_ep_50_steps_5_batch_size
+#SBATCH --job-name=smoke_with_debug_prints
 
 #SBATCH --chdir=/home/aya.elmir/cl_and_rl
 #SBATCH --output=/home/aya.elmir/cl_and_rl/logs/%x_%j.out
@@ -8,7 +8,7 @@
 #SBATCH --partition=gpuhigh2
 #SBATCH --account=inception-energy-llm
 
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -89,13 +89,30 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # need more episodes to see signal of change given the teacher updates once per ep. 
 
+# python scripts/training_loop.py \
+#   --device cuda \
+#   --episodes 5 \
+#   --steps 20 \
+#   --batch_size 5 \
+#   --val_batch_size 16 \
+#   --gamma 0.99 \
+#   --teacher_hidden_dim 32 \
+#   --use_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name valid_ep5_steps20_b5_$(date +%Y_%m_%d_%H_%M)
+
+
 python scripts/training_loop.py \
   --device cuda \
-  --episodes 5 \
+  --episodes 10 \
   --steps 20 \
   --batch_size 5 \
-  --val_batch_size 16 \
-  --gamma 0.99 \
+  --val_batch_size 32 \
+  --gamma 0.95 \
   --teacher_hidden_dim 32 \
   --use_baseline 1 \
   --baseline_type mean_return \
@@ -104,6 +121,20 @@ python scripts/training_loop.py \
   --wandb_project cl-rl \
   --wandb_entity CL-and-RL \
   --wandb_run_name valid_ep5_steps20_b5_$(date +%Y_%m_%d_%H_%M)
+
+
+# --episodes 10 \  Enough to see whether teacher updates are doing anything.
+# steps -> Good short horizon. Credit assignment is not too hard.
+# batch_size -> Because with K=5, this gives roughly 5 examples per bucket under uniform sampling. Much more interpretable than B=5.
+# val_batch_size = 32 -> More stable reward than 16.
+# gamma -> Better than 0.99 for short noisy PoC episodes. With T=20, 0.99 makes rewards across the whole episode almost equally weighted.
+# teacher_hidden_dim -> Good starting point. Keep teacher simple.
+
+
+# NEXT MOVE TO -> But for interpreting learning behavior, I would move quickly to:
+  # batch_size = 25 or 50
+  # val_batch_size = 32 or 64
+  # episodes = 10+
 
 
   # later change the code so direct the name of the err and output files contain the main changes per run 

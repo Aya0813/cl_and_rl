@@ -1,3 +1,4 @@
+
 import argparse
 import gc
 import random
@@ -26,6 +27,34 @@ from teacher_policy import (
     teacher_policy_probs,
 )
 
+def log_comparison_to_wandb(curriculum_run, baseline_run, seed, episode_id):
+    """
+    Log both curriculum and baseline validation curves to the same wandb run for direct comparison.
+    """
+    if wandb is None or wandb.run is None:
+        return
+    steps = list(range(1, len(curriculum_run["val_loss_curve"]) + 1))
+    # Validation loss
+    wandb.log({
+        f"val_loss_comparison/seed_{seed}_ep_{episode_id}": wandb.plot.line_series(
+            xs=steps,
+            ys=[curriculum_run["val_loss_curve"], baseline_run["val_loss_curve"]],
+            keys=["curriculum", "baseline"],
+            title=f"Validation Loss (Seed {seed} Ep {episode_id})",
+            xname="Step"
+        )
+    })
+    # Validation accuracy
+    wandb.log({
+        f"val_acc_comparison/seed_{seed}_ep_{episode_id}": wandb.plot.line_series(
+            xs=steps,
+            ys=[curriculum_run["val_acc_curve"], baseline_run["val_acc_curve"]],
+            keys=["curriculum", "baseline"],
+            title=f"Validation Accuracy (Seed {seed} Ep {episode_id})",
+            xname="Step"
+        )
+    })
+
 
 def clear_device_memory():
     gc.collect() # what is gc - Python's garbage collection module - it's a way to free up memory by cleaning up unused objects in Python. In the context of training loops, especially when running multiple episodes or iterations, you can end up with a lot of intermediate tensors and models that consume GPU memory. By calling gc.collect(), you can help ensure that any unused objects are cleaned up and their memory is freed, which can help prevent out-of-memory errors and keep your training loop running smoothly. It's especially important in a loop where you're creating and deleting models and optimizers, as it helps manage memory more effectively.
@@ -36,9 +65,14 @@ def clear_device_memory():
         torch.mps.empty_cache()
 
 
-def sample_uniform_batch(dataset_split, m, seed): # this function is used to sample a batch of examples uniformly at random from a given dataset split (e.g., validation or test set). It's called "uniform" because it samples examples with equal probability, without any weighting or curriculum. 
+def sample_uniform_batch(dataset_split, m, seed): 
+    # [ TO DIVE DEEPLER LATER ]
+    """
+    This function is used to sample a batch of examples uniformly at random from a given dataset split (e.g., validation or test set). 
+    It's called "uniform" because it samples examples with equal probability, without any weighting or curriculum. 
+    """
     rng = random.Random(seed)
-    n = min(m, len(dataset_split)) # change this later cause not precise 
+    n = min(m, len(dataset_split)) # change this later cause not precise - technically dataset split should be larger than m, but we add this check just in case to avoid errors when the dataset is smaller than the requested batch size. If m is larger than the dataset size, we simply sample as many examples as are available in the dataset.
     indices = rng.sample(range(len(dataset_split)), n)
     return [dataset_split[i] for i in indices]
 
@@ -204,7 +238,6 @@ def run_episode(
     use_teacher=True,      # Whether to use curriculum learning (teacher) vs baseline - False = vanilla uniform sampling
 ):
     
-    
     random.seed(seed)
     torch.manual_seed(seed) 
     clear_device_memory() 
@@ -284,9 +317,9 @@ def run_episode(
                 # If you did that, both a_t and p_ref would point to the same list object. 
                 # If you later modified a_t, it would also modify p_ref. By using [:], you create a separate copy, so modifications to a_t won't affect p_ref.
                 # In the baseline run (use_teacher=False), you want to use the uniform distribution without accidentally modifying it.
-                a_t = p_ref[:]  # creates a shallow copy of the list p_ref  - e.g. Create a copy: [0.2, 0.2, 0.2, 0.2, 0.2]
-                teacher_probs = a_t[:]  # Another copy (for logging)
-                log_prob_t = None # log_prob_t is only relevant when using the teacher, since it's needed for the REINFORCE update. In the baseline case, we won't be doing a policy update, so we can set it to None or just ignore it.
+                a_t             = p_ref[:]  # creates a shallow copy of the list p_ref  - e.g. Create a copy: [0.2, 0.2, 0.2, 0.2, 0.2]
+                teacher_probs   = a_t[:]  # Another copy (for logging)
+                log_prob_t      = None # log_prob_t is only relevant when using the teacher, since it's needed for the REINFORCE update. In the baseline case, we won't be doing a policy update, so we can set it to None or just ignore it.
 
             # 3-4) Sample training batch from buckets via categorical(a_t)
             training_batch, sampled_bucket_indices = sample_batch_from_buckets(
@@ -305,7 +338,9 @@ def run_episode(
                 student_tokenizer=student_tokenizer,
                 batch_examples=val_batch, # <-- Uses the sampled val_batch
                 device=device,
-                max_length=max_length, # do we need max_length here if we're just computing losses? - yes because the model's forward pass might still require it, even if we're not doing any generation. It's safer to include it to ensure that the input tensors are properly shaped and that we don't run into unexpected issues with sequence lengths during evaluation.
+                max_length=max_length, 
+                    # do we need max_length here if we're just computing losses? - yes because the model's forward pass might still require it, even if we're not doing any generation. 
+                    # It's safer to include it to ensure that the input tensors are properly shaped and that we don't run into unexpected issues with sequence lengths during evaluation.
             )
 
             # 7-8) Train learner one SFT step
@@ -349,13 +384,16 @@ def run_episode(
             )
 
             # 10) Validation loss AFTER update on SAME val batch
-            val_loss_after, _ = evaluate_loss_accuracy(
+            val_loss_after, _ = evaluate_loss_accuracy( # note -> this is for the reward signal and reflects immediate improvement on a random sample (which can fluctuate).
                 student_model=student_model,
                 student_tokenizer=student_tokenizer,
                 batch_examples=val_batch, # <-- SAME val_batch (not resampled)
                 device=device,
                 max_length=max_length,
             )
+            # This computes the validation loss on a freshly sampled validation batch (val_batch) right after the student model has been updated in the current step.
+            # This value is used to compute the reward for the teacher (i.e., how much the validation loss improved after the update).
+
 
             ####### 
 
@@ -369,16 +407,66 @@ def run_episode(
             reward_history.append(reward)
             teacher_probs_history.append(teacher_probs)
 
+            ####### 
+
+            print("\n================ STEP ================")
+            print("Step t:", t)
+
+            print("Observation o_t:")
+            print(o_t.detach().cpu().tolist())
+
+            print("\nTeacher mean probs:")
+            print(teacher_probs)
+
+            print("\nSampled Dirichlet action a_t:")
+            print(a_t)
+
+            print("\nBucket counts:") # VERY crutial to see BECAUSE -> If the batch composition barely changes, then the curriculum policy is not really affecting training.
+            print({
+                k: sampled_bucket_indices.count(k)
+                for k in range(num_buckets)
+            })
+
+            print("\nLog prob:")
+            if log_prob_t is not None:
+                print(float(log_prob_t.detach().cpu()))
+            else:
+                print("log_prob_t is None (baseline run)") 
+
+            print("\nValidation improvement:")
+            print(validation_improvement)
+
+            print("\nCompute cost:")
+            print(compute_cost)
+
+            print("\nStability penalty:")
+            print(stability_penalty)
+
+            print("\nFinal reward:")
+            print(reward)
+
+            ####### 
+
             # Validation curve on fixed batch
-            curve_loss, curve_acc = evaluate_loss_accuracy(
+            curve_loss, curve_acc = evaluate_loss_accuracy( # note -> this is for plotting a smooth, comparable learning curve across steps and episodes, since it always uses the same data.
                 student_model=student_model,
                 student_tokenizer=student_tokenizer,
                 batch_examples=fixed_val_batch, # We want to track the validation loss and accuracy over time on a consistent set of examples to see how the student's performance evolves throughout the episode. By using a fixed validation batch (sampled once at the beginning of the episode), we can plot a meaningful validation curve that reflects the student's learning progress on the same data points, rather than having the validation metrics fluctuate due to different random samples at each step. This allows us to better visualize the impact of the teacher's curriculum decisions on the student's learning trajectory.
                 device=device,
                 max_length=max_length,
             )
+            # This computes the validation loss and accuracy on a fixed validation batch (fixed_val_batch) that was sampled once at the start of the episode and stays the same for all steps.
+            # This value is used to build a consistent validation curve over the episode, so you can plot how the model improves on the same set of examples over time.
+
+            
+            # val_loss_after → reward calculation, fresh batch each step
+            # curve_loss → learning curve plotting, fixed batch for consistency
+
+
             val_loss_curve.append(curve_loss)
             val_acc_curve.append(curve_acc)
+
+            ####### 
 
             step_time = time.perf_counter() - step_start
             step_time_history.append(step_time)
@@ -406,11 +494,14 @@ def run_episode(
 
             clear_device_memory()
 
-        # episode done 
+        ####### ####### ####### episode done ####### ####### ####### 
         
         # REINFORCE update once per episode
         teacher_loss = None
         returns = discounted_returns(trajectory_rewards, gamma=gamma)
+        
+        
+        
         
         if use_teacher:
             teacher_loss = reinforce_teacher_update(
@@ -458,6 +549,22 @@ def run_episode(
             # The validation loss and accuracy that we track at each step during the episode are meant to provide a real-time signal of the student's performance and learning progress on a consistent set of examples (the fixed_val_batch). This allows us to see how the student's performance evolves over time in response to the teacher's curriculum decisions. The validation metrics can fluctuate from step to step based on the training updates and the teacher's actions, and they serve as a feedback signal for the teacher's policy learning.
             # The final test loss and accuracy are meant to provide an overall evaluation of the student's performance on held-out data after the entire curriculum learning process has been completed. These metrics are computed on a separate test set that was not used during training or for the validation curve, so they serve as an unbiased assessment of how well the student has learned to solve the problems after being guided by the teacher's curriculum. When interpreting these final test metrics, you can compare them between the curriculum and baseline runs to see if the teacher's guidance led to better generalization performance on unseen data. Additionally, you can analyze how the final test performance correlates with the validation curves and the teacher's actions throughout the episode to gain insights into which curriculum strategies were most effective in improving the student's learning outcomes.
     
+        
+        print("\n====================================")
+        print("END OF EPISODE")
+        print("====================================")
+
+        print("Trajectory rewards:")
+        print(trajectory_rewards)
+
+        print("\nDiscounted returns:")
+        print(returns)
+
+        # print("\nAdvantages:")
+        # print(advantages)
+
+
+        
         # [ TO DIVE INTO IT DEEPLY LATER ]
         convergence_step = 1 + min(range(len(val_loss_curve)), key=lambda i: val_loss_curve[i]) # this line finds the index of the step where the validation loss was lowest, which we can interpret as the point of convergence or best performance during training. By adding 1, we convert from a 0-based index to a 1-based step number for easier interpretation (e.g., "convergence at step 5" instead of "convergence at index 4"). This metric can help us understand how quickly the student model improved during training and whether the teacher's curriculum decisions led to faster convergence compared to the baseline.
         if enable_wandb and wandb is not None and wandb.run is not None:  # log final episode metrics and curves to wandb
@@ -574,6 +681,39 @@ def run_final_evaluation(
 ):
     clear_device_memory()
     device = resolve_device(device)
+
+    import datetime
+    run_start_time = datetime.datetime.now()
+    print("\n========== RUN CONFIGURATION ==========")
+    print(f"[RUN START] {run_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print("\n# === GENERAL RUN SETUP ===")
+    print(f"seeds: {seeds}")
+    print(f"episodes: {episodes}")
+    print(f"device: {device}")
+    print(f"enable_wandb: {enable_wandb}")
+    print(f"wandb_project: {wandb_project}")
+    print(f"wandb_entity: {wandb_entity}")
+    print(f"wandb_run_name: {wandb_run_name}")
+    print("\n# === STUDENT MODEL CONFIGURATION ===")
+    print(f"student_model_name: {student_model_name}")
+    print(f"student_lr: {student_lr}")
+    print(f"max_length: {max_length}")
+    print(f"batch_size (B): {B}")
+    print(f"val_batch_size: {val_batch_size}")
+    print("\n# === TEACHER MODEL CONFIGURATION ===")
+    print(f"teacher_lr: {teacher_lr}")
+    print(f"teacher_hidden_dim: {teacher_hidden_dim}")
+    print("\n# === TEACHER POLICY PARAMETERS ===")
+    print(f"gamma: {gamma}")
+    print(f"lambda_cost: {lambda_cost}")
+    print(f"alpha_stability: {alpha_stability}")
+    print("\n# === REINFORCE BASELINE CONFIGURATION ===")
+    print(f"use_baseline: {use_baseline}")
+    print(f"baseline_type: {baseline_type}")
+    print(f"normalize_advantage: {normalize_advantage}")
+    print("\n# === TRAINING LOOP ===")
+    print(f"steps (T): {T}")
+    print("=======================================\n")
     print(f"Running on device: {device}")
     if enable_wandb and wandb is None:  # fail fast if user requested wandb without dependency
         raise ImportError("wandb is not installed. Please run: pip install wandb")  # clear install guidance
@@ -654,67 +794,79 @@ def run_final_evaluation(
 
         for ep in range(episodes):
             print(f"\n\n######## Seed={seed} Episode={ep} | Curriculum ########")
-            curriculum_runs.append(
-                run_episode(
-                    D_tr=D_tr,
-                    D_val_curve=D_val_curve,
-                    D_test=D_test,
-                    buckets=buckets,
-                    T=T,
-                    B=B,
-                    val_batch_size=val_batch_size,
-                    seed=seed,
-                    episode_id=ep,
-                    student_model_name=student_model_name,
-                    student_lr=student_lr,
-                    teacher_lr=teacher_lr,
-                    teacher_hidden_dim=teacher_hidden_dim, 
-                    gamma=gamma, 
-                    lambda_cost=lambda_cost, 
-                    alpha_stability=alpha_stability, 
-                    use_baseline=use_baseline,
-                    baseline_type=baseline_type,
-                    normalize_advantage=normalize_advantage,
-                    device=device,
-                    max_length=max_length,
-                    use_teacher=True, # MAIN difference between curriculum and baseline runs - whether teacher is used or not
-                    enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
-                )
+            curriculum_run = run_episode(
+                D_tr=D_tr,
+                D_val_curve=D_val_curve,
+                D_test=D_test,
+                buckets=buckets,
+                T=T,
+                B=B,
+                val_batch_size=val_batch_size,
+                seed=seed,
+                episode_id=ep,
+                student_model_name=student_model_name,
+                student_lr=student_lr,
+                teacher_lr=teacher_lr,
+                teacher_hidden_dim=teacher_hidden_dim, 
+                gamma=gamma, 
+                lambda_cost=lambda_cost, 
+                alpha_stability=alpha_stability, 
+                use_baseline=use_baseline,
+                baseline_type=baseline_type,
+                normalize_advantage=normalize_advantage,
+                device=device,
+                max_length=max_length,
+                use_teacher=True, # MAIN difference between curriculum and baseline runs - whether teacher is used or not
+                enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
             )
+            curriculum_runs.append(curriculum_run)
 
             print(f"\n\n######## Seed={seed} Episode={ep} | Baseline ########")
-            baseline_runs.append(
-                run_episode(
-                    D_tr=D_tr,
-                    D_val_curve=D_val_curve,
-                    D_test=D_test,
-                    buckets=buckets,
-                    T=T,
-                    B=B,
-                    val_batch_size=val_batch_size, 
-                    seed=seed,
-                    episode_id=ep,
-                    student_model_name=student_model_name,
-                    student_lr=student_lr,
-                    teacher_lr=teacher_lr,
-                    teacher_hidden_dim=teacher_hidden_dim,
-                    gamma=gamma,
-                    lambda_cost=lambda_cost,
-                    alpha_stability=alpha_stability,
-                    use_baseline=use_baseline, 
-                    baseline_type=baseline_type,
-                    normalize_advantage=normalize_advantage,
-                    device=device,
-                    max_length=max_length,
-                    use_teacher=False, ## 
-                    enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
-                ) # note: all arguments are still relevant for the baseline run, even though the teacher is not being used. The baseline run will still go through the same training loop and evaluation process, but instead of using the teacher's policy to sample from the buckets, it will use a uniform distribution. The other parameters (like teacher_hidden_dim, gamma, lambda_cost, alpha_stability) won't have an effect on the baseline run since the teacher is not being used, but they are still passed in for consistency and to avoid having separate function signatures for curriculum vs baseline runs. In a more refined implementation, we might want to have some of these parameters be optional or have default values that are only relevant when use_teacher=True to make it clearer that they are not used in the baseline case.
+            baseline_run = run_episode(
+                D_tr=D_tr,
+                D_val_curve=D_val_curve,
+                D_test=D_test,
+                buckets=buckets,
+                T=T,
+                B=B,
+                val_batch_size=val_batch_size, 
+                seed=seed,
+                episode_id=ep,
+                student_model_name=student_model_name,
+                student_lr=student_lr,
+                teacher_lr=teacher_lr,
+                teacher_hidden_dim=teacher_hidden_dim,
+                gamma=gamma,
+                lambda_cost=lambda_cost,
+                alpha_stability=alpha_stability,
+                use_baseline=use_baseline, 
+                baseline_type=baseline_type,
+                normalize_advantage=normalize_advantage,
+                device=device,
+                max_length=max_length,
+                use_teacher=False, ## 
+                enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
             )
-        
+            baseline_runs.append(baseline_run)
+
+
+
+
+
+            # Log both curves to wandb for direct comparison
+            if enable_wandb and wandb is not None and wandb.run is not None:
+                log_comparison_to_wandb(curriculum_run, baseline_run, seed, ep)
+
             clear_device_memory()
 
     summarize_runs("Curriculum (REINFORCE Teacher)", curriculum_runs)
     summarize_runs("Vanilla SFT Baseline", baseline_runs)
+    run_end_time = datetime.datetime.now()
+    run_duration = run_end_time - run_start_time
+    print("\n========== RUN END ==========")
+    print(f"[RUN END] {run_end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Total run duration: {str(run_duration).split('.')[0]}")
+    print("============================\n")
     if enable_wandb and wandb is not None and wandb.run is not None:  # close wandb run cleanly
         wandb.finish()  # flush metrics and finalize run
     return {"curriculum_runs": curriculum_runs, "baseline_runs": baseline_runs}

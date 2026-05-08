@@ -78,15 +78,20 @@ for each episode:
             running change in loss per bucket
         )
 
-        # 2. Teacher chooses action
-        a_t = teacher policy μ_φ(. | o_t)       # a_t is a distribution over buckets
+        # 2. Teacher chooses action (distribution over buckets) -> teacher policy μ_φ(. | o_t) 
+        logits_t = TeacherMLP_φ(o_t)
+        teacher_probs_t = softmax(logits_t)                             # teacher_probs_t is the mean/preferred bucket distribution
+        concentration_t = concentration_scale * teacher_probs_t + ε     # concentration_scale controls how noisy/exploratory the sampled action is
+        a_t ~ Dirichlet(concentration_t)                                # a_t is the actual sampled distribution over buckets used at this step
+        log_prob_t = log Dirichlet(a_t ; concentration_t)               # stored for the REINFORCE update
+
 
         # 3-4. Sample training mini-batch B_t from D_tr using a_t
         training_batch = []
         for b in 1 ... B: # for each example in the batch
             sample bucket k_{t,b} ~ Categorical(a_t)            # Pick which bucket this example should come from.
             sample example index i_{t,b} ~ Uniform(I_{k_{t,b}}) # Then pick a random example inside that bucket.
-            add e_{i_{t,b}} to training_batch
+            add example e_{i_{t,b}} to training_batch
             # so batch B matches the distribution dictated by a_t
 
         # 5. Sample one validation mini-batch from fixed D_val
@@ -146,3 +151,8 @@ Compare against vanilla SFT baseline using:
     - final test / held-out accuracy
     - validation curve (loss / accuracy vs steps)
     - convergence speed
+
+
+# baseline with REINFORCE without CL 
+# focus on the baseline & get some signal - then start playing with teahcer student aprt !!!
+# ask kirill 3la gpus.. 
