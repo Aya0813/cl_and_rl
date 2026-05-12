@@ -54,45 +54,41 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     pad_id = tokenizer.pad_token_id
     eos_id = tokenizer.eos_token_id
 
+
     # These lists will store tokenized sequences before batching
     input_ids_list = []
     labels_list = []
+    orig_lengths = []  # Track original (unclipped) sequence lengths
+    clipped_counts = 0  # Track number of clipped examples
 
     # Process each example in the batch individually
+
     for ex in batch_examples:
         problem = ex["problem"]      # input text (question)
         solution = ex["solution"]    # target text (answer / reasoning)
-
-        # Format input as a prompt (this is what model sees)
-        prompt_text = f"Problem:\n{problem}\n\nSolution:\n"
-
-        # Tokenize prompt and solution separately # why are we doing this and what is this ["input_ids"] - answer: because we want to create a single input sequence that consists of the prompt followed by the solution. We tokenize them separately so that we can create labels that only compute loss on the solution part. The ["input_ids"] is how Hugging Face tokenizers return the list of token IDs corresponding to the input text. When you call tokenizer(text), it returns a dictionary with various fields, and "input_ids" is the key that contains the list of token IDs for the given text.
-        prompt_ids      = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
-        solution_ids    = tokenizer(solution, add_special_tokens=False)["input_ids"]
-
-        # Concatenate prompt + solution → full input sequence
-        full_ids = prompt_ids + solution_ids
-
-        # Labels:  
-        # - mask prompt tokens with -100 (ignored in loss) # why -100 specifically? answer: In PyTorch's CrossEntropyLoss, the default ignore_index is -100. This means that any target token with the value -100 will be ignored when computing the loss. By setting the labels for the prompt tokens to -100, we ensure that the loss is only computed on the solution tokens, which are the ones we want the model to learn to generate. The prompt tokens are part of the input but do not contribute to the loss, so they are masked out with -100.
-        # - keep solution tokens for loss computation
-        full_labels = [-100] * len(prompt_ids) + solution_ids 
-
-        # Why are we dealing with the problem and the solution separately and why do we need to deal with IDs? answer: We deal with the problem and solution separately because we want to create a training setup where the model is given the problem as input and is trained to generate the solution. The problem tokens are part of the input prompt, but we don't want to compute loss on them since they are not the target output. The model is trained to generate the solution given the problem, so we only care about the loss on the solution tokens.
-
-        # append EOS token at the end (optional)
-        if eos_id is not None: # What s the point of this? answer: The EOS (end-of-sequence) token is used to indicate the end of the input sequence. Appending an EOS token can help the model understand where the input ends, especially if the model was trained with EOS tokens during pretraining. It can also help with generation, as the model may learn to stop generating when it produces an EOS token. However, it's optional because some models can handle variable-length inputs without needing an explicit EOS token, and in some cases, you might want to control the sequence length more precisely without adding extra tokens.
+        prompt_text = f"Problem:\n{problem}\n\nSolution:\n"  # Build prompt
+        prompt_ids = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]  # Tokenize prompt
+        solution_ids = tokenizer(solution, add_special_tokens=False)["input_ids"]  # Tokenize solution
+        full_ids = prompt_ids + solution_ids  # Concatenate prompt and solution
+        full_labels = [-100] * len(prompt_ids) + solution_ids  # Mask prompt in labels (why? -> we don't want to compute loss on the prompt tokens, only on the solution tokens)
+        # Why -100? -> In PyTorch's CrossEntropyLoss, the label -100 is used as a special value to indicate that the corresponding token should be ignored when computing the loss. By setting the labels for the prompt tokens to -100, we ensure that they do not contribute to the loss calculation, and only the solution tokens (which have their actual token IDs in the labels) are used for training the model. This allows us to train the model to generate the solution based on the prompt without penalizing it for the prompt tokens.
+        orig_len = len(full_ids)  # Original sequence length
+        orig_lengths.append(orig_len)  # Track original length
+        # Append EOS token if available
+        if eos_id is not None:
             full_ids = full_ids + [eos_id]
             full_labels = full_labels + [eos_id]
-
-        # Truncate sequences if too long 
-        # We're dealing with math problems and solutions, so some of them might be very long (But still maybe all of the text is needed for a proper understanding the problem/solution) also how do we decide on the max_length ? and what s the impact of truncating on the training ? answer: The max_length is a hyperparameter that you can set based on the expected length of your input sequences and the context window of the model you're using. For example, if you're using a model with a context window of 1024 tokens, you might set max_length to 1024 or slightly less to account for any special tokens. Truncating sequences that are too long can lead to loss of information, especially if important parts of the problem or solution are cut off. This can negatively impact training, as the model may not learn to solve problems correctly if it doesn't see the full context. It's important to choose a max_length that balances the need to fit within the model's context window while still capturing enough information from the problems and solutions.
-        full_ids = full_ids[:max_length]
+        # Clip to max_length
+        if len(full_ids) > max_length:
+            clipped_counts += 1  # Count as clipped
+        full_ids = full_ids[:max_length] # keep only the first max_length tokens and discard the rest.
         full_labels = full_labels[:max_length]
 
-        # Convert to PyTorch tensors
-        input_ids_list.append(torch.tensor(full_ids, dtype=torch.long))
-        labels_list.append(torch.tensor(full_labels, dtype=torch.long))
+        # WHY do we need to truncate seperatly full_ids and full_labels? answer: We need to truncate full_ids and full_labels separately because they may have different values. The full_ids list contains the token IDs for the input sequence (prompt + solution), while the full_labels list contains the corresponding labels for loss computation (with -100 for prompt tokens and actual token IDs for solution tokens). When we truncate to max_length, we need to ensure that both lists are truncated in the same way so that the input tokens and their corresponding labels remain aligned. If we were to truncate them together without considering their different values, we might end up with misaligned input and label sequences, which would lead to incorrect loss computation during training.
+        # DIVE DEEP LATER 
+
+        input_ids_list.append(torch.tensor(full_ids, dtype=torch.long))  # Store input ids
+        labels_list.append(torch.tensor(full_labels, dtype=torch.long))  # Store labels
         # Visual example of what the input_ids and labels would look like for a simple problem and solution ? answer: Let's say we have a simple problem and solution:
         # Problem: "Compute 2 + 2."
         # Solution: "We add 2 and 2 to get 4."
@@ -106,6 +102,7 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
         # In this example, the first four tokens correspond to the prompt and are masked with -100 in the labels, while the solution tokens have their actual token IDs in the labels for loss computation.
 
     # Determine max sequence length in this batch (for padding) - what is the goal of padding here ? answer: The goal of padding is to ensure that all sequences in the batch have the same length, which is necessary for efficient batch processing in PyTorch. Since different examples may have different lengths after tokenization, we pad the shorter sequences with a special padding token (with ID pad_id) so that they all match the length of the longest sequence in the batch. This allows us to create tensors of shape (batch_size, max_seq_length) that can be fed into the model without issues.
+
     max_len = max(len(x) for x in input_ids_list)
     batch_size = len(input_ids_list)
 
@@ -143,8 +140,16 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     # why in theses examples labs always start with -100 ? answer: The "labs" (labels) start with -100 because the first part of the input sequence corresponds to the prompt, and we do not want to compute loss on the prompt tokens. The model is trained to generate the solution given the prompt, so we only care about the loss on the solution tokens. By setting the labels for the prompt tokens to -100, we ensure that they are ignored during loss computation, and only the solution tokens contribute to the training signal. This is a common technique when training language models on tasks where only a portion of the input should be used for computing loss.
 
 
-    # Move tensors to device (CPU or GPU)
-    return input_ids.to(device), attention_mask.to(device), labels.to(device)
+    # Compute batch clipped ratio (fraction of examples clipped)
+    batch_clipped_ratio = clipped_counts / batch_size if batch_size > 0 else 0.0
+    # Compute per-example clipped ratio (how much was clipped for each example)
+    clipped_ratios = []
+    for i, orig_len in enumerate(orig_lengths):
+        clipped_len = min(orig_len, max_length)
+        ratio = 0.0 if orig_len == 0 else max(0, orig_len - clipped_len) / orig_len
+        clipped_ratios.append(ratio)
+    # Return tensors and clipping stats
+    return input_ids.to(device), attention_mask.to(device), labels.to(device), batch_clipped_ratio, clipped_ratios
 
 
 def student_train_step(model, tokenizer, optimizer, batch_examples, device=None, max_length=1024):
@@ -168,38 +173,44 @@ def student_train_step(model, tokenizer, optimizer, batch_examples, device=None,
     # Why do we need this step? answer: In PyTorch, gradients are accumulated by default. This means that if you call loss.backward() multiple times without resetting the gradients, they will be summed together. To prevent this and ensure that each training step only uses the gradients from the current batch, we call optimizer.zero_grad() at the beginning of each training step to reset all gradients to zero before computing new ones. This is a standard practice in PyTorch training loops.
     optimizer.zero_grad()
 
-    # Build input tensors (input_ids, attention_mask, labels)
-    input_ids, attention_mask, labels = build_solution_only_batch(
+
+    # Build input tensors and clipping stats
+    input_ids, attention_mask, labels, batch_clipped_ratio, clipped_ratios = build_solution_only_batch(
         batch_examples=batch_examples,
         tokenizer=tokenizer,
         device=device,
         max_length=max_length,
     )
 
+
     # Forward pass through model
-    # When labels are provided, Hugging Face models automatically compute loss
     outputs = model(
         input_ids=input_ids,
         attention_mask=attention_mask,
         labels=labels,
     )
 
+
     # Extract computed loss (cross-entropy over non-masked tokens)
     loss = outputs.loss
+
 
     # Backpropagation: compute gradients
     loss.backward()
 
+
     # Update model parameters using optimizer
     optimizer.step()
+
 
     # Convert loss to Python float for logging
     batch_loss = float(loss.item())
 
     print(f"Batch loss: {batch_loss:.6f}")
+    print(f"Batch clipped ratio: {batch_clipped_ratio:.4f}")  # Print batch clipped ratio
 
-    # Return updated model parameters and loss
-    return model.state_dict(), batch_loss
+    # Return updated model parameters, loss, and clipping stats
+    return model.state_dict(), batch_loss, batch_clipped_ratio, clipped_ratios
 
 
 def validation_batch_loss(

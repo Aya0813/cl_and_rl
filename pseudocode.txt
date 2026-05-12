@@ -17,10 +17,10 @@ m           = validation batch size (fixed integer, not %)
 η_student   = (eta) student learning rate
 
 # Teacher (policy)
-η_teacher   = (eta)teacher learning rate
+η_teacher   = (eta) teacher learning rate
 γ           = (gamma) discount factor
 λ_cost      = (lambda) compute-cost weight
-α_reg       = KL stability regularizer weight
+α_reg       = (alpha) KL stability regularizer weight
 p_ref       = reference distribution over buckets
 hidden_dim  = 
 
@@ -29,6 +29,12 @@ use_baseline            = True
 baseline_type           = "mean_return"      # or "value_function"
 normalize_advantage     = True
 
+
+# -----------------------------
+# Main reward equation 
+# -----------------------------
+
+reward = validation_improvement - λ_cost * compute_cost - α_reg * stability_penalty
 
 # -----------------------------
 # Inputs / initialization
@@ -152,7 +158,3 @@ Compare against vanilla SFT baseline using:
     - validation curve (loss / accuracy vs steps)
     - convergence speed
 
-
-# baseline with REINFORCE without CL 
-# focus on the baseline & get some signal - then start playing with teahcer student aprt !!!
-# ask kirill 3la gpus.. 

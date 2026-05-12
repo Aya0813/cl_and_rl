@@ -242,7 +242,8 @@ def run_episode(
     torch.manual_seed(seed) 
     clear_device_memory() 
 
-    dtype = torch.float16 if device == "mps" else torch.float32 
+    # dtype = torch.float16 if device == "mps" else torch.float32 
+    dtype = torch.float16 if device in ["cuda", "mps"] else torch.float32 # TO CONFIRM it s fine 
     student_tokenizer = None
     student_model = None
     student_optimizer = None
@@ -329,6 +330,16 @@ def run_episode(
                 seed=seed + (episode_id * 1000) + t, # ensure different sampling each step and episode (note that it is t dependant - unlike test sampling)
             )
 
+            bucket_counts = {
+                k: sampled_bucket_indices.count(k)
+                for k in range(num_buckets)
+            }
+
+            print("Sampled action a_t:", a_t)
+            print("Sampled bucket counts:", bucket_counts)
+
+
+
             # 5) Sample one validation batch from fixed D_val -> AT EACH STEP
             val_batch = sample_uniform_batch(D_val_curve, m=m_val, seed=seed + 20_000 + t)
 
@@ -344,7 +355,8 @@ def run_episode(
             )
 
             # 7-8) Train learner one SFT step
-            _, train_loss = student_train_step(
+            # Train step returns loss and clipping stats
+            _, train_loss, batch_clipped_ratio, clipped_ratios = student_train_step(
                 model=student_model,
                 tokenizer=student_tokenizer,
                 optimizer=student_optimizer,
@@ -352,6 +364,16 @@ def run_episode(
                 device=device,
                 max_length=max_length,
             )
+            # Track batch clipped ratio for this step
+            if 'batch_clipped_ratios' not in locals():
+                batch_clipped_ratios = []  # List to store batch clipped ratios
+            batch_clipped_ratios.append(batch_clipped_ratio)
+            # Track per-bucket clipped ratios for this step
+            if 'clipped_ratios_per_bucket' not in locals():
+                clipped_ratios_per_bucket = [[] for _ in range(len(buckets))]  # List of lists
+            # Assign each example's clipped ratio to its bucket
+            for idx, bucket_idx in enumerate(sampled_bucket_indices):
+                clipped_ratios_per_bucket[bucket_idx].append(clipped_ratios[idx])
 
             # 9) Update running bucket statistics
             # PURPOSE: Track which buckets are "easy" vs "hard" based on their current loss values.
@@ -403,8 +425,8 @@ def run_episode(
             stability_penalty = compute_stability_penalty_kl(a_t, p_ref)
             reward = validation_improvement - lambda_cost * compute_cost - alpha_stability * stability_penalty
 
-            trajectory_rewards.append(reward)
-            reward_history.append(reward)
+            trajectory_rewards.append(float(reward)) # for student/validation values, be careful. Store Python floats, not tensors with graphs. -> This prevents accidental tensor graph storage later.
+            reward_history.append(float(reward))
             teacher_probs_history.append(teacher_probs)
 
             ####### 
@@ -477,6 +499,8 @@ def run_episode(
             print(f"Reward: {reward:.6f}")
             print(f"Step time: {step_time:.2f}s")
             print(f"Teacher bucket probs: {teacher_probs}")
+            print(f"Batch clipped ratio: {batch_clipped_ratio:.4f}")  # Print batch clipped ratio
+            print_gpu_memory(tag=f"after step {t + 1}/{T}") # tells whether memory is growing step by step
             if enable_wandb and wandb is not None and wandb.run is not None:  # log step metrics only when wandb is active
                 wandb.log({  # send one metrics payload per step
                     "step": t + 1,  # 1-based step index for readability
@@ -495,12 +519,19 @@ def run_episode(
             clear_device_memory()
 
         ####### ####### ####### episode done ####### ####### ####### 
+        # Compute overall clipped ratio for the episode
+        general_clipped_ratio = sum(batch_clipped_ratios) / len(batch_clipped_ratios) if batch_clipped_ratios else 0.0
+        # Compute per-bucket average clipped ratio for the episode
+        clipped_ratio_per_bucket = [sum(ratios) / len(ratios) if ratios else 0.0 for ratios in clipped_ratios_per_bucket]
         
         # REINFORCE update once per episode
         teacher_loss = None
         returns = discounted_returns(trajectory_rewards, gamma=gamma)
         
-        
+        print("\n===== END OF EPISODE DEBUG =====")
+        print("Trajectory rewards:", trajectory_rewards)
+        print("Discounted returns:", returns)
+        print_gpu_memory(tag="before teacher update")
         
         
         if use_teacher:
@@ -580,7 +611,6 @@ def run_episode(
             })
 
             # Log validation loss and accuracy curves as wandb plots
-            # These will appear as line plots in the wandb dashboard, one for each run (curriculum/baseline)
             wandb.log({
                 "val_loss_curve": wandb.plot.line_series(
                     xs=list(range(1, len(val_loss_curve) + 1)),
@@ -596,7 +626,29 @@ def run_episode(
                     title=f"Validation Accuracy Curve ({'curriculum' if use_teacher else 'baseline'})",
                     xname="Step"
                 ),
+                # Plot batch clipped ratio curve
+                "batch_clipped_ratio_curve": wandb.plot.line_series(
+                    xs=list(range(1, len(batch_clipped_ratios) + 1)),
+                    ys=[batch_clipped_ratios],
+                    keys=["batch_clipped_ratio"],
+                    title=f"Batch Clipped Ratio Curve ({'curriculum' if use_teacher else 'baseline'})",
+                    xname="Step"
+                ),
+                # Plot general clipped ratio as a horizontal line
+                "general_clipped_ratio": general_clipped_ratio,
             })
+            # Plot per-bucket clipped ratio curves
+            for i, bucket_curve in enumerate(clipped_ratios_per_bucket):
+                if bucket_curve:
+                    wandb.log({
+                        f"clipped_ratio_bucket_{i}": wandb.plot.line_series(
+                            xs=list(range(1, len(bucket_curve) + 1)),
+                            ys=[bucket_curve],
+                            keys=[f"bucket_{i}"],
+                            title=f"Clipped Ratio Curve Bucket {i} ({'curriculum' if use_teacher else 'baseline'})",
+                            xname="Step"
+                        )
+                    })
 
             # Log teacher's probability distribution over time (only for curriculum runs)
             if use_teacher and teacher_probs_history and len(teacher_probs_history) > 0:
@@ -632,6 +684,9 @@ def run_episode(
             "final_test_acc": final_test_acc,
             "convergence_step": convergence_step,
             "bucket_stats": stats,
+            "general_clipped_ratio": general_clipped_ratio,  # Add general clipped ratio to output
+            "batch_clipped_ratios": batch_clipped_ratios,    # Add batch clipped ratios to output
+            "clipped_ratio_per_bucket": clipped_ratio_per_bucket,  # Add per-bucket ratios
         }
     finally: # try-finally because No matter what happens (error or success), the finally block always executes and cleans up the models and optimizers to free up memory, which is especially important when running multiple episodes in a loop.
         if teacher_optimizer is not None:
@@ -654,6 +709,15 @@ def summarize_runs(label, runs):
     print(f"Avg final held-out test accuracy: {mean([r['final_test_acc'] for r in runs]):.6f}")
     print(f"Avg convergence step: {mean([r['convergence_step'] for r in runs]):.2f}")
     print(f"Avg step time (seconds): {mean([r['avg_step_time'] for r in runs]):.2f}")
+
+def print_gpu_memory(tag=""):
+    if torch.cuda.is_available():
+        print(
+            f"[GPU MEMORY] {tag} | "
+            f"allocated={torch.cuda.memory_allocated() / 1024**3:.2f} GB | "
+            f"reserved={torch.cuda.memory_reserved() / 1024**3:.2f} GB | "
+            f"max_allocated={torch.cuda.max_memory_allocated() / 1024**3:.2f} GB"
+        )
 
 
 def run_final_evaluation(
@@ -694,6 +758,8 @@ def run_final_evaluation(
     print(f"wandb_project: {wandb_project}")
     print(f"wandb_entity: {wandb_entity}")
     print(f"wandb_run_name: {wandb_run_name}")
+    print("\n# === TRAINING LOOP ===")
+    print(f"steps (T): {T}")
     print("\n# === STUDENT MODEL CONFIGURATION ===")
     print(f"student_model_name: {student_model_name}")
     print(f"student_lr: {student_lr}")
@@ -711,8 +777,6 @@ def run_final_evaluation(
     print(f"use_baseline: {use_baseline}")
     print(f"baseline_type: {baseline_type}")
     print(f"normalize_advantage: {normalize_advantage}")
-    print("\n# === TRAINING LOOP ===")
-    print(f"steps (T): {T}")
     print("=======================================\n")
     print(f"Running on device: {device}")
     if enable_wandb and wandb is None:  # fail fast if user requested wandb without dependency
@@ -848,9 +912,6 @@ def run_final_evaluation(
                 enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
             )
             baseline_runs.append(baseline_run)
-
-
-
 
 
             # Log both curves to wandb for direct comparison

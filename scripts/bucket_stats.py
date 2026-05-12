@@ -6,7 +6,7 @@ def update_bucket_loss_stats(
     bucket_labels,
     losses,
     stats=None,
-    alpha=0.3, # ?? 
+    alpha=0.3, 
 ):
     """
     Update running loss statistics per bucket.

@@ -8,12 +8,14 @@
 #SBATCH --partition=gpuhigh2
 #SBATCH --account=inception-energy-llm
 
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=24:00:00
+
+
 
 # Load modules
 module load anaconda/2023.03
@@ -110,7 +112,7 @@ python scripts/training_loop.py \
   --device cuda \
   --episodes 10 \
   --steps 20 \
-  --batch_size 5 \
+  --batch_size 10 \
   --val_batch_size 32 \
   --gamma 0.95 \
   --teacher_hidden_dim 32 \
@@ -120,7 +122,9 @@ python scripts/training_loop.py \
   --wandb 1 \
   --wandb_project cl-rl \
   --wandb_entity CL-and-RL \
-  --wandb_run_name valid_ep5_steps20_b5_$(date +%Y_%m_%d_%H_%M)
+  --wandb_run_name valid_ep10_steps20_b10_val32_$(date +%Y_%m_%d_%H_%M)
+
+  # around 2 examples per bucket per step with batch_size 10, which is a good starting point for interpretability. With batch_size 5, we had around 1 example per bucket, which made it hard to interpret the teacher's behavior and the reward signal. With batch_size 10, we can start to see clearer patterns in how the teacher is sampling from the buckets and how that affects the student's learning and validation performance.
 
 
 # --episodes 10 \  Enough to see whether teacher updates are doing anything.
@@ -138,3 +142,4 @@ python scripts/training_loop.py \
 
 
   # later change the code so direct the name of the err and output files contain the main changes per run 
+
