@@ -100,7 +100,7 @@ def clamp_batch_size(dataset_len, batch_size):
 def evaluate_loss_accuracy(student_model, student_tokenizer, batch_examples, device, max_length=1024): 
     student_model.eval()
     with torch.no_grad():
-        input_ids, attention_mask, labels = build_solution_only_batch(
+        input_ids, attention_mask, labels, *_  = build_solution_only_batch(
             batch_examples=batch_examples,
             tokenizer=student_tokenizer,
             device=device,

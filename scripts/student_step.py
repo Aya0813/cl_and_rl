@@ -248,7 +248,7 @@ def validation_batch_loss(
 
     model.eval()
     with torch.no_grad():
-        input_ids, attention_mask, labels = build_solution_only_batch(
+        input_ids, attention_mask, labels, *_ = build_solution_only_batch( # unpack only the first 3 values
             batch_examples=validation_batch,
             tokenizer=tokenizer,
             device=device,

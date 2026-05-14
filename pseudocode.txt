@@ -1,3 +1,31 @@
+# -----------------------------
+# WORKFLOW
+# -----------------------------
+
+Teacher observes learning state
+        ↓
+Teacher proposes bucket mixture
+        ↓
+Dirichlet perturbs mixture for exploration
+        ↓
+Batch gets constructed slot-by-slot
+        ↓
+Student learns
+        ↓
+Validation improvement computed
+        ↓
+Teacher gets reward
+        ↓
+REINFORCE updates teacher
+
+
+
+# -----------------------------
+# KEY DEFINITIONS TO KEEP IN MIND
+# -----------------------------
+
+- a_t tells you the probability of choosing each bucket. 
+
 
 # -----------------------------
 # FULL HYPERPARAMETERS SUMMARY
