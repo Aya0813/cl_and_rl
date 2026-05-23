@@ -4,7 +4,7 @@
 
 Teacher observes learning state
         ↓
-Teacher proposes bucket mixture
+Teacher proposes bucket mixture (chooses a probability distribution over these 5 buckets)
         ↓
 Dirichlet perturbs mixture for exploration
         ↓
@@ -18,13 +18,7 @@ Teacher gets reward
         ↓
 REINFORCE updates teacher
 
-
-
-# -----------------------------
-# KEY DEFINITIONS TO KEEP IN MIND
-# -----------------------------
-
-- a_t tells you the probability of choosing each bucket. 
+note: a_t tells you the probability of choosing each bucket. 
 
 
 # -----------------------------
@@ -35,9 +29,9 @@ Student θ   - update every step t
 Teacher φ   - once per episode  
 
 # Experiment setup
-episodes    = number of episodes (PoC)
+episodes    = number of episodes 
 T           = training steps per episode (short horizon to reduce variance)
-seed        = number of seeds (PoC uses 1) -> 1 seed = 1 full range of experiments (all episodes)
+seed        = number of seeds -> 1 seed = 1 full range of experiments (all episodes)
 
 # Student (learner)
 B           = training batch size
@@ -50,13 +44,12 @@ m           = validation batch size (fixed integer, not %)
 λ_cost      = (lambda) compute-cost weight
 α_reg       = (alpha) KL stability regularizer weight
 p_ref       = reference distribution over buckets
-hidden_dim  = 
+hidden_dim  = Hidden dimension of teacher MLP -> Start small (e.g., 32), then tune (16/32/64/128).
 
 # REINFORCE / variance reduction
 use_baseline            = True
 baseline_type           = "mean_return"      # or "value_function"
 normalize_advantage     = True
-
 
 # -----------------------------
 # Main reward equation 
@@ -87,18 +80,19 @@ Set hyperparameters (PoC):
     T           = 20        # start with 20-50 so the credit assignment is not hard with long horizons
     B           = 32        # or 64
     m           = 32          
-    η_student   = 10^(-4) # 0.99 is too high                           
-    γ           = ...
+    η_student   = 10^(-4)   # 0.99 is too high                           
+    γ           = 0.95
     λ_cost      = 0 
-    α_reg       = ...
-    p_ref       = ...
-    hidden_dim  = 64 - then if teacher not learning well (128), if training too slow or overfitting (go to 32)
+    α_reg       = 0.0 
+    p_ref       = uniform
+    hidden_dim  = 32 - then if teacher not learning well (128)
     
 
 Initialize running bucket statistics:
     avg_loss_per_bucket
     change_in_loss_per_bucket
 
+initialize SEPARATE student model & optimizer for baseline AND curriculum
 
 for each episode: 
 
@@ -168,7 +162,7 @@ for each episode:
         q_t = sum_{k=t}^{T-1} γ^{k-t} r_k       # r_k = reward at time step k
     
     episode_baseline = mean (q_0, q_1, ..., q_{T-1})    # over the steps in an episode
-    for t in range(T): # compute advantages A_t
+    for t in range(T): 
         A_t = q_t - episode_baseline
     
     # Compute policy gradient
@@ -186,3 +180,20 @@ Compare against vanilla SFT baseline using:
     - validation curve (loss / accuracy vs steps)
     - convergence speed
 
+
+
+##################################################################################
+VISUAL EXAMPLES TO UNDERSTAND FURTHER: 
+
+
+Seed 11:
+├─ Episode 0
+│  ├─ Curriculum: student_curriculum learns with teacher guidance
+│  └─ Baseline: student_baseline learns uniformly (no teacher)
+├─ Episode 1
+│  ├─ Curriculum: student_curriculum learns more (continues from ep0)
+│  └─ Baseline: student_baseline learns more (continues from ep0)
+└─ Episode 2
+   ├─ Curriculum: student_curriculum learns more (continues from ep1)
+   └─ Baseline: student_baseline learns more (continues from ep1) 
+   ..... 

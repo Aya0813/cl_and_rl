@@ -206,7 +206,6 @@ def student_train_step(model, tokenizer, optimizer, batch_examples, device=None,
     # Convert loss to Python float for logging
     batch_loss = float(loss.item())
 
-    print(f"Batch loss: {batch_loss:.6f}")
     print(f"Batch clipped ratio: {batch_clipped_ratio:.4f}")  # Print batch clipped ratio
 
     # Return updated model parameters, loss, and clipping stats

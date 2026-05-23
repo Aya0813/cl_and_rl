@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=smoke_with_debug_prints
+#SBATCH --job-name=smoke
 
 #SBATCH --chdir=/home/aya.elmir/cl_and_rl
 #SBATCH --output=/home/aya.elmir/cl_and_rl/logs/%x_%j.out
@@ -108,21 +108,32 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --wandb_run_name valid_ep5_steps20_b5_$(date +%Y_%m_%d_%H_%M)
 
 
+# RUN different SEEDs at ONCE (for LATER)
+# SEEDS=(11 22 33)
+# SEED=${SEEDS[$((SLURM_ARRAY_TASK_ID - 1))]}
+
+# python3 scripts/training_loop.py \
+#     --seed $SEED \
+#     -- --episodes 3 \
+#     .....
+
+
+
 python scripts/training_loop.py \
   --device cuda \
-  --episodes 10 \
-  --steps 20 \
-  --batch_size 10 \
-  --val_batch_size 32 \
+  --episodes 5 \
+  --steps 5 \
+  --batch_size 15 \
+  --val_batch_size 15 \
   --gamma 0.95 \
   --teacher_hidden_dim 32 \
-  --use_baseline 1 \
+  --use_advantage_baseline 1 \
   --baseline_type mean_return \
   --normalize_advantage 1 \
   --wandb 1 \
   --wandb_project cl-rl \
   --wandb_entity CL-and-RL \
-  --wandb_run_name valid_ep10_steps20_b10_val32_$(date +%Y_%m_%d_%H_%M)
+  --wandb_run_name smoke_ep5_steps5_b15_val15_$(date +%Y_%m_%d_%H_%M)
 
   # around 2 examples per bucket per step with batch_size 10, which is a good starting point for interpretability. With batch_size 5, we had around 1 example per bucket, which made it hard to interpret the teacher's behavior and the reward signal. With batch_size 10, we can start to see clearer patterns in how the teacher is sampling from the buckets and how that affects the student's learning and validation performance.
 
