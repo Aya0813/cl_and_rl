@@ -22,10 +22,5 @@ uv pip install -r requirements.txt
 
 ## Run
 ```bash
-python scripts/training_loop.py
-```
-
-Optional flags:
-```bash
-python scripts/training_loop.py --steps 20 --batch_size 8 --device auto --wandb 1
+sbatch test.sh
 ```
