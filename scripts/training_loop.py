@@ -27,64 +27,6 @@ from teacher_policy import (
     teacher_policy_probs,
 )
 
-def log_seed_comparison_to_wandb(seed_curriculum_runs, seed_baseline_runs, seed):
-    """
-    Log curriculum vs baseline validation curves for one seed across all episodes.
-    Concatenates curves across episodes and overlays them in wandb plots.
-    """
-    if wandb is None or wandb.run is None or not seed_curriculum_runs or not seed_baseline_runs:
-        return
-    
-    # Concatenate curriculum curves across episodes for this seed
-    curriculum_loss_curve = []  # Concatenate all episodes' loss curves
-    curriculum_acc_curve = []  # Concatenate all episodes' accuracy curves
-    for run in seed_curriculum_runs:
-        curriculum_loss_curve.extend(run["val_loss_curve"])
-        curriculum_acc_curve.extend(run["val_acc_curve"])
-    
-    # Concatenate baseline curves across episodes for this seed
-    baseline_loss_curve = []  # Concatenate all episodes' loss curves
-    baseline_acc_curve = []  # Concatenate all episodes' accuracy curves
-    for run in seed_baseline_runs:
-        baseline_loss_curve.extend(run["val_loss_curve"])
-        baseline_acc_curve.extend(run["val_acc_curve"])
-    
-    # Create x-axis: steps across all episodes
-    total_steps = len(curriculum_loss_curve)
-    # xs = list(range(1, total_steps + 1))  # Global step counter across episodes
-
-    total_steps = len(curriculum_loss_curve)
-    curriculum_loss_curve = curriculum_loss_curve[:total_steps]
-    baseline_loss_curve = baseline_loss_curve[:total_steps]
-    curriculum_acc_curve = curriculum_acc_curve[:total_steps]
-    baseline_acc_curve = baseline_acc_curve[:total_steps]
-    xs = list(range(total_steps))
-    
-    # Log validation loss plot with both curves overlaid
-    wandb.log({
-        f"val_loss_seed_{seed}": wandb.plot.line_series(
-            xs=xs,
-            ys=[curriculum_loss_curve, baseline_loss_curve],  # Both curves in same plot
-            keys=["curriculum", "baseline"],  # Legend labels
-            title=f"Validation Loss - Seed {seed} (across episodes)",
-            xname="Global Step"
-        )
-    })
-    
-    # Log validation accuracy plot with both curves overlaid
-    wandb.log({
-        f"val_acc_seed_{seed}": wandb.plot.line_series(
-            xs=xs,
-            ys=[curriculum_acc_curve, baseline_acc_curve],  # Both curves in same plot
-            keys=["curriculum", "baseline"],  # Legend labels
-            title=f"Validation Accuracy - Seed {seed} (across episodes)",
-            xname="Global Step"
-        )
-    })
-
-    
-
-
 def clear_device_memory():
     gc.collect() # what is gc - Python's garbage collection module - it's a way to free up memory by cleaning up unused objects in Python. In the context of training loops, especially when running multiple episodes or iterations, you can end up with a lot of intermediate tensors and models that consume GPU memory. By calling gc.collect(), you can help ensure that any unused objects are cleaned up and their memory is freed, which can help prevent out-of-memory errors and keep your training loop running smoothly. It's especially important in a loop where you're creating and deleting models and optimizers, as it helps manage memory more effectively.
     if torch.cuda.is_available():
@@ -233,6 +175,8 @@ def run_episode(
     buckets,               # Dict mapping bucket indices to example lists
     seed,                  # Random seed (from loop, not direct CLI arg)
     episode_id,            # Episode number within seed (from loop, not direct CLI arg)
+    global_val_curve_batch,# Global fixed validation batch (sampled once per seed, used for all episodes)
+    global_test_batch,     # Global fixed test batch (sampled once per seed, used for all episodes)
 
     T,                     # Number of training steps (from --steps CLI arg)
     B,                     # Training batch size (from --batch_size CLI arg)
@@ -295,8 +239,8 @@ def run_episode(
         print (f"Reference bucket probabilities (p_ref): {p_ref}\n") # should be uniform distribution over buckets, e.g., [0.2, 0.2, 0.2, 0.2, 0.2] for 5 buckets.
         stats = None
 
-        val_loss_curve = []
-        val_acc_curve = []
+        per_ep_val_loss_curve = []
+        per_ep_val_acc_curve = []
         reward_history = []
         teacher_probs_history = []
         step_time_history = []
@@ -304,22 +248,13 @@ def run_episode(
         trajectory_rewards = []
         trajectory_log_probs = []
 
-        # define validation batch sizes for both val and test 
-        m_val = clamp_batch_size(len(D_val_curve), val_batch_size) # clamp val batch size to not exceed dataset size, with a warning if clamping occurs 
-        m_test = clamp_batch_size(len(D_test), val_batch_size)
-        # technically m_val and m_test are not necessarily the same as val_batch_size if the datasets are smaller than val_batch_size, but for simplicity we use the same val_batch_size argument for both validation and test batch sizes. In a more refined implementation, we might want to have separate CLI arguments for val_batch_size and test_batch_size to allow more flexibility in case the validation and test datasets have different sizes or if we want to use different batch sizes for them.
-        
-        if device == "mps": # to deal with it later - change cause not precise 
-            m_val = min(m_val, 4)
-            m_test = min(m_test, 4)
-        
-        print(f"Validation batch size: {m_val} and Held-out batch size: {m_test}")
-
-        fixed_val_batch = sample_uniform_batch(D_val_curve, m=m_val, seed=seed + 10_000 + episode_id) # samples once at the beginning and stays fixed for the entire episode—that's used for the validation curve you plot.
-        print(f"Sampled fixed validation batch of size {len(fixed_val_batch)} for episode {episode_id} (seed {seed}). This batch will be used for the validation curve throughout the episode.\n")
+        # Use global fixed validation and test batches that were sampled once per seed
+        # This ensures consistent convergence tracking across all episodes
+        print(f"Using global fixed validation batch of size {len(global_val_curve_batch)} (sampled once per seed). This batch will be used for the validation curve throughout this run.\n")
+        print(f"Using global fixed test batch of size {len(global_test_batch)} (sampled once per seed). This batch will be used for final test evaluation throughout this run.\n")
 
 
-        for t in range(T):
+        for t in range(T): 
     
             global_step = episode_id * T + t
             step_start = time.perf_counter()
@@ -398,7 +333,7 @@ def run_episode(
 
             # 5) Sample one validation batch from fixed D_val -> AT EACH STEP
             print("\n----- (5) Sample validation batch -----")
-            val_batch = sample_uniform_batch(D_val_curve, m=m_val, seed=seed + 20_000 + t)
+            val_batch = sample_uniform_batch(D_val_curve, m=clamp_batch_size(len(D_val_curve), val_batch_size), seed=seed + 30_000 + t)
             print(f"Sampled validation batch of size {len(val_batch)} at step {t + 1} for reward evaluation (seed {seed}). This batch is freshly sampled each step to compute the reward signal based on immediate validation improvement.\n")
             print (f"Validation batch of length {len(val_batch)}:")
             if val_batch:
@@ -507,25 +442,25 @@ def run_episode(
 
             ####### 
 
-            # Validation curve on fixed batch
-            curve_loss, curve_acc = evaluate_loss_accuracy( # note -> this is for plotting a smooth, comparable learning curve across steps and episodes, since it always uses the same data.
+            # Validation curve on global fixed batch (consistent across all episodes)
+            per_step_val_curve_loss, per_step_val_curve_acc = evaluate_loss_accuracy( # note -> this is for plotting a smooth, comparable learning curve across steps and episodes, since it always uses the same data.
                 student_model=student_model,
                 student_tokenizer=student_tokenizer,
-                batch_examples=fixed_val_batch, # We want to track the validation loss and accuracy over time on a consistent set of examples to see how the student's performance evolves throughout the episode. By using a fixed validation batch (sampled once at the beginning of the episode), we can plot a meaningful validation curve that reflects the student's learning progress on the same data points, rather than having the validation metrics fluctuate due to different random samples at each step. This allows us to better visualize the impact of the teacher's curriculum decisions on the student's learning trajectory.
+                batch_examples=global_val_curve_batch, # We want to track the validation loss and accuracy over time on a consistent set of examples to see how the student's performance evolves throughout ALL episodes. By using a global fixed validation batch (sampled once per seed at the beginning), we can plot a meaningful validation curve that reflects the student's learning progress on the same data points across episodes, rather than having the validation metrics fluctuate due to different random samples per episode. This allows us to better visualize the impact of the teacher's curriculum decisions on the student's learning trajectory across the entire training run.
                 device=device,
                 max_length=max_length,
             )
-            # This computes the validation loss and accuracy on a fixed validation batch (fixed_val_batch) that was sampled once at the start of the episode and stays the same for all steps.
-            # This value is used to build a consistent validation curve over the episode, so you can plot how the model improves on the same set of examples over time.
+            # This computes the validation loss and accuracy on a global fixed validation batch (global_val_curve_batch) that was sampled once at the start of the seed (before all episodes) and stays the same for all steps across all episodes.
+            # This value is used to build a consistent validation curve across all episodes, so you can plot how the model improves on the same set of examples over time and across episodes.
             # val_loss_after → reward calculation, fresh batch each step
-            # curve_loss → learning curve plotting, fixed batch for consistency
+            # per_step_val_curve_loss → learning curve plotting, global fixed batch for consistency across episodes
 
-            print (f"Validation on fixed batch (for curve):")
-            print (f"   Loss: {curve_loss:.6f}")
-            print (f"   Accuracy: {curve_acc:.6f}\n")
+            print (f"Validation on global fixed batch (sampled once per seed) for current step {t + 1}:")
+            print (f"   Loss: {per_step_val_curve_loss:.6f}")
+            print (f"   Accuracy: {per_step_val_curve_acc:.6f}\n")
             
-            val_loss_curve.append(curve_loss)
-            val_acc_curve.append(curve_acc)
+            per_ep_val_loss_curve.append(per_step_val_curve_loss)
+            per_ep_val_acc_curve.append(per_step_val_curve_acc)
 
             ####### 
 
@@ -541,19 +476,13 @@ def run_episode(
 
             if enable_wandb and wandb is not None and wandb.run is not None:  # log step metrics only when wandb is active
                 wandb.log({  # send one metrics payload per step
-                    "global_step": global_step,
-                    "step_in_episode": t + 1,  # 1-based step index for readability
-                    "method": "curriculum" if use_teacher else "baseline",  # tag run branch in logs
-                    "seed": seed,  # track random seed in each record
-                    "episode_id": episode_id,  # track episode index in each record
-                    "train_loss": train_loss,  # student train loss at this step
-                    "val_loss_before": val_loss_before,  # validation loss before update
-                    "val_loss_after": val_loss_after,  # validation loss after update
-                    "reward": reward,  # scalar reward used by teacher
-                    "curve_loss": curve_loss,  # fixed-batch validation loss curve value
-                    "curve_acc": curve_acc,  # fixed-batch validation accuracy curve value
-                    "step_time_sec": step_time,  # wall-clock step duration
-                    "validation_improvement": validation_improvement,  # how much val loss improved after update
+                    "train/loss": train_loss,
+                    "reward/value": reward,
+                    "reward/validation_improvement": validation_improvement,
+                    "per_step_val_curve/loss": per_step_val_curve_loss,
+                    "per_step_val_curve/acc": per_step_val_curve_acc,
+                    # "episode/id": episode_id,
+                    # **{f"bucket/prob_{i}": prob for i, prob in enumerate(teacher_probs)},
                 }, step = global_step)  # close step-level wandb payload
 
                 # SUMMARY of what's GREAT To log: 
@@ -581,17 +510,16 @@ def run_episode(
 
         ##### 
 
-        # Sampled ONCE at the end of the entire episode (after all T steps)
-        test_batch = sample_uniform_batch(D_test, m=m_test, seed=seed + 30_000 + episode_id)
-        final_test_loss, final_test_acc = evaluate_loss_accuracy(
+        # Using global fixed test batch (sampled once per seed, used for all episodes)
+        final_ep_test_loss, final_ep_test_acc = evaluate_loss_accuracy(
             student_model=student_model,
             student_tokenizer=student_tokenizer,
-            batch_examples=test_batch,  # <-- Single test evaluation
+            batch_examples=global_test_batch,  # <-- Global fixed test evaluation
             device=device,
             max_length=max_length,
         ) 
-        print (f"\nFinal test evaluation on held-out batch of size {m_test} (sampled once per episode):")
-        print (f"Test loss: {final_test_loss:.4f}, Test accuracy: {final_test_acc:.4f}")
+        print (f"\nFinal test evaluation on global fixed held-out batch (sampled once per seed):")
+        print (f"Test loss: {final_ep_test_loss:.4f}, Test accuracy: {final_ep_test_acc:.4f}")
 
         # difference between val and test
             # Val batch during training: Resampled fresh every step (seed + 20_000 + t changes each step)
@@ -654,88 +582,33 @@ def run_episode(
 
         
         # [ TO DIVE INTO IT DEEPLY LATER ]
-        convergence_step = 1 + min(range(len(val_loss_curve)), key=lambda i: val_loss_curve[i]) # this line finds the index of the step where the validation loss was lowest, which we can interpret as the point of convergence or best performance during training. By adding 1, we convert from a 0-based index to a 1-based step number for easier interpretation (e.g., "convergence at step 5" instead of "convergence at index 4"). This metric can help us understand how quickly the student model improved during training and whether the teacher's curriculum decisions led to faster convergence compared to the baseline.
-        print (f"\nConvergence step (lowest validation loss): Step {convergence_step} with val_loss {val_loss_curve[convergence_step - 1]:.6f}")
+
+        ########## to know how QUICKLY the student model improved during training → whether the teacher's curriculum decisions led to FASTER convergence against baseline.  ##########
+        # find the smallest loss in the per_ep_val_loss_curve (which has T losses -> 1 per step) -> and save that step as the convergence step 
+        # note -> in this context convergence meanas -> there is no loss that is lower
+        convergence_step = 1 + min(range(len(per_ep_val_loss_curve)), key=lambda i: per_ep_val_loss_curve[i]) # this line finds the index of the step where the validation loss was lowest, which we can interpret as the point of convergence or best performance during training. By adding 1, we convert from a 0-based index to a 1-based step number for easier interpretation (e.g., "convergence at step 5" instead of "convergence at index 4"). This metric can help us understand how quickly the student model improved during training and whether the teacher's curriculum decisions led to faster convergence compared to the baseline.
+        print (f"\nConvergence step (lowest validation loss): Step {convergence_step} with val_loss {per_ep_val_loss_curve[convergence_step - 1]:.6f}")
+
+        # Calculate global_step_end: the final step of this episode across all episodes
+        global_step_end = episode_id * T + (T - 1)  # 0-indexed, so last step is T-1
 
         if enable_wandb and wandb is not None and wandb.run is not None:  # log final episode metrics and curves to wandb
-            # Log final episode summary
+            # Log final episode summary at the global step end
             wandb.log({
-                "method": "curriculum" if use_teacher else "baseline",  # tag run branch in logs
-                "seed": seed,  # include seed for grouping
-                "episode_id": episode_id,  # include episode identifier
-                "final_test_loss": final_test_loss,  # held-out final test loss
-                "final_test_acc": final_test_acc,  # held-out final test accuracy
-                "convergence_step": convergence_step,  # best validation-loss step index
-                "avg_step_time": mean(step_time_history),  # average per-step runtime
-                "general_clipped_ratio": general_clipped_ratio,
-                "batch_clipped_ratios": batch_clipped_ratios,
-                "clipped_ratio_per_bucket": clipped_ratio_per_bucket,
-            })
+                # "episode/id": episode_id,
+                "final_ep_test/loss": final_ep_test_loss,
+                "final_ep_test/acc": final_ep_test_acc,
+                "episode/convergence_step": convergence_step,
+            }, step=global_step_end)  # log at the final global step of this episode
             # LATER THINK OF LOGGING ALSO ->             "bucket_0_prob": action[0], "bucket_1_prob": action[1],... 
-
-        #     # Log validation loss and accuracy curves as wandb plots
-        #     wandb.log({
-        #         "val_loss_curve": wandb.plot.line_series(
-        #             xs=list(range(1, len(val_loss_curve) + 1)),
-        #             ys=[val_loss_curve],
-        #             keys=["val_loss"],
-        #             title=f"Validation Loss Curve ({'curriculum' if use_teacher else 'baseline'})",
-        #             xname="Step"
-        #         ),
-        #         "val_acc_curve": wandb.plot.line_series(
-        #             xs=list(range(1, len(val_acc_curve) + 1)),
-        #             ys=[val_acc_curve],
-        #             keys=["val_acc"],
-        #             title=f"Validation Accuracy Curve ({'curriculum' if use_teacher else 'baseline'})",
-        #             xname="Step"
-        #         ),
-        #         # Plot batch clipped ratio curve
-        #         "batch_clipped_ratio_curve": wandb.plot.line_series(
-        #             xs=list(range(1, len(batch_clipped_ratios) + 1)),
-        #             ys=[batch_clipped_ratios],
-        #             keys=["batch_clipped_ratio"],
-        #             title=f"Batch Clipped Ratio Curve ({'curriculum' if use_teacher else 'baseline'})",
-        #             xname="Step"
-        #         ),
-        #         # Plot general clipped ratio as a horizontal line
-        #         "general_clipped_ratio": general_clipped_ratio,
-        #     })
-        #     # Plot per-bucket clipped ratio curves
-        #     for i, bucket_curve in enumerate(clipped_ratios_per_bucket):
-        #         if bucket_curve:
-        #             wandb.log({
-        #                 f"clipped_ratio_bucket_{i}": wandb.plot.line_series(
-        #                     xs=list(range(1, len(bucket_curve) + 1)),
-        #                     ys=[bucket_curve],
-        #                     keys=[f"bucket_{i}"],
-        #                     title=f"Clipped Ratio Curve Bucket {i} ({'curriculum' if use_teacher else 'baseline'})",
-        #                     xname="Step"
-        #                 )
-        #             })
-
-        #     # Log teacher's probability distribution over time (only for curriculum runs)
-        #     if use_teacher and teacher_probs_history and len(teacher_probs_history) > 0:
-        #         # teacher_probs_history: list of lists, shape [steps, num_buckets]
-        #         num_buckets = len(teacher_probs_history[0])
-        #         xs = list(range(1, len(teacher_probs_history) + 1))
-        #         ys = list(zip(*teacher_probs_history))  # shape: [num_buckets][steps]
-        #         keys = [f"bucket_{i}" for i in range(num_buckets)]
-        #         wandb.log({
-        #             "teacher_probs_curve": wandb.plot.line_series(
-        #                 xs=xs,
-        #                 ys=ys,
-        #                 keys=keys,
-        #                 title="Teacher Bucket Probabilities (curriculum)",
-        #                 xname="Step"
-        #             )
-        #         })
 
         return {
             "method": "curriculum" if use_teacher else "baseline",
             "seed": seed,
             "episode_id": episode_id,
-            "val_loss_curve": val_loss_curve,
-            "val_acc_curve": val_acc_curve,
+            "T": T,  # Track steps per episode for global_step calculations
+            "per_ep_val_loss_curve": per_ep_val_loss_curve,
+            "per_ep_val_acc_curve": per_ep_val_acc_curve,
             "reward_history": reward_history,
             "teacher_probs_history": teacher_probs_history,
             "step_time_history": step_time_history,
@@ -743,13 +616,14 @@ def run_episode(
             "returns": returns,
             "teacher_loss": teacher_loss,
             "updated_teacher_probs": updated_probs,
-            "final_test_loss": final_test_loss,
-            "final_test_acc": final_test_acc,
+            "final_ep_test_loss": final_ep_test_loss,
+            "final_ep_test_acc": final_ep_test_acc,
             "convergence_step": convergence_step,
             "bucket_stats": stats,
             "general_clipped_ratio": general_clipped_ratio,  # Add general clipped ratio to output
             "batch_clipped_ratios": batch_clipped_ratios,    # Add batch clipped ratios to output
             "clipped_ratio_per_bucket": clipped_ratio_per_bucket,  # Add per-bucket ratios
+            "global_step_end": global_step_end,  # Final global step of this episode
         }
     finally: # try-finally because No matter what happens (error or success), the finally block always executes and cleans up temporary objects to free up memory.
         # Note: student_model, student_tokenizer, student_optimizer, teacher_model, and teacher_optimizer
@@ -760,8 +634,8 @@ def run_episode(
 def summarize_runs(label, runs): # label is whether it's curriculum or baseline run 
     print(f"\n===== {label} Summary of across all seeds =====")
     print(f"Runs (total number of episodes across all seeds): {len(runs)}")
-    print(f"Avg final held-out test loss: {mean([r['final_test_loss'] for r in runs]):.6f}")
-    print(f"Avg final held-out test accuracy: {mean([r['final_test_acc'] for r in runs]):.6f}")
+    print(f"Avg final held-out test loss: {mean([r['final_ep_test_loss'] for r in runs]):.6f}")
+    print(f"Avg final held-out test accuracy: {mean([r['final_ep_test_acc'] for r in runs]):.6f}")
     print(f"Avg convergence step: {mean([r['convergence_step'] for r in runs]):.2f}") # what does this do? -> This line calculates the average convergence step across all runs. The convergence step is defined as the step at which the validation loss was lowest during training. By taking the mean of these convergence steps across multiple runs, we can get an overall sense of how quickly the student model tended to reach its best performance on the validation set under the given training conditions (curriculum vs baseline). A lower average convergence step would suggest that, on average, the student model reached its optimal performance earlier in the training process, which could indicate more efficient learning potentially due to the teacher's curriculum guidance.
     print(f"Avg step time (seconds): {mean([r['avg_step_time'] for r in runs]):.2f}") # what does this do? -> This line calculates the average step time in seconds across all runs. The step time is the wall-clock duration it took to complete each training step during the episode. By averaging this metric across multiple runs, we can get an overall sense of the computational efficiency of the training process under the given conditions (curriculum vs baseline). If one method consistently has a lower average step time, it could indicate that it is more computationally efficient, which is an important factor to consider alongside final performance metrics like test loss and accuracy when evaluating the effectiveness of the curriculum learning approach. 
 
@@ -775,12 +649,94 @@ def print_gpu_memory(tag=""):
         )
 
 
+def setup_experiment(
+    seed,
+    student_model_name,
+    student_lr,
+    teacher_lr,
+    teacher_hidden_dim,
+    val_batch_size,
+    test_batch_size,
+    device,
+):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    D_tr, D_val_curve, D_test, buckets_raw = prepare_math_dataset(
+        seed=seed,
+        train_ratio=0.8,
+        val_ratio=0.1,
+        holdout_ratio=0.1,
+    )
+
+    bucket_keys = sorted(buckets_raw.keys())
+    buckets = {i: buckets_raw[k] for i, k in enumerate(bucket_keys)}
+    print(f"Bucket keys: {bucket_keys}")
+    print("Bucket sizes:")
+    for i, k in enumerate(bucket_keys):
+        print(f"  {i} ({k}): {len(buckets[i])} examples")
+
+    m_val = clamp_batch_size(len(D_val_curve), val_batch_size)
+    m_test = clamp_batch_size(len(D_test), test_batch_size)
+    if device == "mps":
+        m_val = min(m_val, 4)
+        m_test = min(m_test, 4)
+
+    fixed_val_curve_batch = sample_uniform_batch(
+        D_val_curve,
+        m=m_val,
+        seed=seed + 10_000,
+    )
+    fixed_test_batch = sample_uniform_batch(
+        D_test,
+        m=m_test,
+        seed=seed + 20_000,
+    )
+
+    dtype = torch.float16 if device in ["cuda", "mps"] else torch.float32
+    student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
+    student_model = AutoModelForCausalLM.from_pretrained(
+        student_model_name,
+        torch_dtype=dtype,
+    ).to(device)
+    student_optimizer = torch.optim.AdamW(student_model.parameters(), lr=student_lr)
+
+    teacher_model = init_teacher_model(
+        K=len(buckets),
+        device=device,
+        hidden_dim=teacher_hidden_dim,
+    )
+    teacher_optimizer = torch.optim.Adam(teacher_model.parameters(), lr=teacher_lr)
+
+    print(f"Loaded student model '{student_model_name}' on device '{device}' with dtype '{dtype}'.")
+    print(f"Student optimizer: AdamW with lr={student_lr}.")
+    print(f"Validation curve batch size: {len(fixed_val_curve_batch)}")
+    print(f"Fixed test batch size: {len(fixed_test_batch)}")
+    print(f"Initialized teacher model with {sum(p.numel() for p in teacher_model.parameters())} parameters.")
+
+    return {
+        "D_tr": D_tr,
+        "D_val_curve": D_val_curve,
+        "D_test": D_test,
+        "buckets": buckets,
+        "fixed_val_curve_batch": fixed_val_curve_batch,
+        "fixed_test_batch": fixed_test_batch,
+        "student_model": student_model,
+        "student_tokenizer": student_tokenizer,
+        "student_optimizer": student_optimizer,
+        "teacher_model": teacher_model,
+        "teacher_optimizer": teacher_optimizer,
+    }
+
 def run_final_evaluation(
+    method,
     seed,
     episodes,
     T,
     B,
     val_batch_size,
+    test_batch_size,
     student_model_name,
     student_lr,
     teacher_lr,
@@ -800,68 +756,70 @@ def run_final_evaluation(
 ):
     clear_device_memory()
     device = resolve_device(device)
+    use_teacher = method == "curriculum"
 
     import datetime
     run_start_time = datetime.datetime.now()
+    run_name = wandb_run_name or f"{method}_seed_{seed}"
+
     print("\n========== RUN CONFIGURATION ==========")
     print(f"[RUN START] {run_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print("\n# === GENERAL RUN SETUP ===")
+    print(f"method: {method}")
     print(f"seed: {seed}")
     print(f"episodes: {episodes}")
     print(f"device: {device}")
     print(f"enable_wandb: {enable_wandb}")
     print(f"wandb_project: {wandb_project}")
     print(f"wandb_entity: {wandb_entity}")
-    print(f"wandb_run_name: {wandb_run_name}")
-    print("\n# === TRAINING LOOP ===")
+    print(f"wandb_run_name: {run_name}")
     print(f"steps (T): {T}")
-    print("\n# === STUDENT MODEL CONFIGURATION ===")
+    print(f"batch_size (B): {B}")
+    print(f"val_batch_size: {val_batch_size}")
+    print(f"test_batch_size: {test_batch_size}")
     print(f"student_model_name: {student_model_name}")
     print(f"student_lr: {student_lr}")
     print(f"max_length: {max_length}")
-    print(f"batch_size (B): {B}")
-    print(f"val_batch_size: {val_batch_size}")
-    print("\n# === TEACHER MODEL CONFIGURATION ===")
     print(f"teacher_lr: {teacher_lr}")
     print(f"teacher_hidden_dim: {teacher_hidden_dim}")
-    print("\n# === TEACHER POLICY PARAMETERS ===")
     print(f"gamma: {gamma}")
     print(f"lambda_cost: {lambda_cost}")
     print(f"alpha_stability: {alpha_stability}")
-    print("\n# === REINFORCE BASELINE CONFIGURATION ===")
     print(f"use_advantage_baseline: {use_advantage_baseline}")
     print(f"baseline_type: {baseline_type}")
     print(f"normalize_advantage: {normalize_advantage}")
     print("=======================================\n")
-    print(f"Running on device: {device}")
-    if enable_wandb and wandb is None:  # fail fast if user requested wandb without dependency
-        raise ImportError("wandb is not installed. Please run: pip install wandb")  # clear install guidance
-    if enable_wandb and wandb is not None:  # initialize wandb once for this execution
-        wandb.init(  # create a new wandb run
-            project=wandb_project,  # set wandb project name
-            entity=wandb_entity,  # optional wandb team/user
-            name=wandb_run_name,  # optional custom run title
-            config={  # store key hyperparameters in run config
-                "steps": T,  # number of train steps per episode
-                "batch_size": B,  # train batch size
-                "val_batch_size": val_batch_size,  # validation batch size
-                "student_model_name": student_model_name,  # student model identifier
-                "student_lr": student_lr,  # student optimizer learning rate
-                "teacher_lr": teacher_lr,  # teacher optimizer learning rate
-                "teacher_hidden_dim": teacher_hidden_dim,  # teacher MLP width
-                "gamma": gamma,  # return discount factor
-                "lambda_cost": lambda_cost,  # compute-cost penalty weight
-                "alpha_stability": alpha_stability,  # stability penalty weight
-                "use_advantage_baseline": use_advantage_baseline,  # whether baseline is used in reinforce
-                "baseline_type": baseline_type,  # baseline strategy name
-                "normalize_advantage": normalize_advantage,  # advantage normalization toggle
-                "max_length": max_length,  # sequence truncation cap
-                "device": device,  # resolved runtime device
-            },  # close config payload
-        )  # finish wandb initialization
 
-    # Keep MPS safer by default 
-    # TO DIVE FURTHER LATER - does not make sense to have different max_length and batch_size for MPS vs other devices, but this is just a quick fix to avoid OOM errors on MPS during testing. Ideally we would implement proper dynamic batching and/or gradient accumulation to handle larger batches on MPS without OOM.
+    if enable_wandb and wandb is None:
+        raise ImportError("wandb is not installed. Please run: pip install wandb")
+    if enable_wandb and wandb is not None:
+        wandb.init(
+            project=wandb_project,
+            entity=wandb_entity,
+            name=run_name,
+            group=f"seed_{seed}",
+            config={
+                "method": method,
+                "seed": seed,
+                "episodes": episodes,
+                "steps": T,
+                "batch_size": B,
+                "val_batch_size": val_batch_size,
+                "test_batch_size": test_batch_size,
+                "student_model_name": student_model_name,
+                "student_lr": student_lr,
+                "teacher_lr": teacher_lr,
+                "teacher_hidden_dim": teacher_hidden_dim,
+                "gamma": gamma,
+                "lambda_cost": lambda_cost,
+                "alpha_stability": alpha_stability,
+                "use_advantage_baseline": use_advantage_baseline,
+                "baseline_type": baseline_type,
+                "normalize_advantage": normalize_advantage,
+                "max_length": max_length,
+                "device": device,
+            },
+        )
+
     if device == "mps":
         if B > 2:
             print(f"[MPS] Reducing B from {B} to 2 to avoid OOM.")
@@ -870,202 +828,66 @@ def run_final_evaluation(
             print(f"[MPS] Reducing max_length from {max_length} to 256 to avoid OOM.")
             max_length = 256
 
-    curriculum_runs = []
-    baseline_runs = []
-
-    print(f"SEED NUMBER: {seed}\n")
-
-    print ("Train/Val/Holdout split:")
-
-    # Split once per seed: 80% train / 10% val / 10% holdout
-    D_tr, D_val_curve, D_test, buckets_raw = prepare_math_dataset( 
+    experiment = setup_experiment(
         seed=seed,
-        train_ratio=0.8,        # training
-        val_ratio=0.1,          # validation (used during training for reward)
-        holdout_ratio=0.1,      # test (final evaluation)
-    )
-
-    # D_val_curve is basically D_val -> called that because it is reserved for plotting the validation curve during training 
-
-    # TO DIVE FURTHER LATER - cause there could be overlap between the val sampling 
-
-    # note the distinction between val_ratio and val_batch_size
-        # val_ratio      → defines how big the validation dataset is (how much data is reserved for validation)
-        # val_batch_size → defines how many samples you use per step
-
-    # buckets_raw is the original bucket structure coming from your dataset preprocessing
-    # buckets_raw = {
-    #     "easy":   [example1, example2, ...],
-    #     "medium": [...],
-    #     "hard":   [...]
-    # } 
-    # keys = semantic labels of buckets (e.g. easy/medium/hard)
-    
-    bucket_keys = sorted(buckets_raw.keys()) 
-    buckets = {i: buckets_raw[k] for i, k in enumerate(bucket_keys)}
-    print(f"Bucket keys: {bucket_keys}")
-    print("Bucket sizes:")
-    for i, k in enumerate(bucket_keys):
-        print(f"  {i} ({k}): {len(buckets[i])} examples")
-        
-
-        # - `bucket_keys = ['1','2','3']`
-        # - `buckets = {0: buckets_raw['1'], 1: buckets_raw['2'], 2: buckets_raw['3']}`
-        # Teacher action `a_t[i]` corresponds directly to integer bucket `i`.
-
-    print ("\n")
-
-    # Initialize dtype and tokenizer once (shared between curriculum and baseline)
-    dtype = torch.float16 if device in ["cuda", "mps"] else torch.float32
-    student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
-    
-    # Initialize separate student model and optimizer for CURRICULUM (persists across all episodes)
-    student_model_curriculum = AutoModelForCausalLM.from_pretrained(
-        student_model_name, torch_dtype=dtype
-    ).to(device)
-    student_optimizer_curriculum = torch.optim.AdamW(student_model_curriculum.parameters(), lr=student_lr)
-    
-    print(f"Loaded CURRICULUM student model '{student_model_name}' on device '{device}' with dtype '{dtype}'.")
-    print(f"Curriculum student optimizer: AdamW with lr={student_lr}.")
-    print(f"This curriculum student model will persist across all {episodes} episode(s) for this seed.\n")
-    
-    # Initialize separate student model and optimizer for BASELINE (persists across all episodes)
-    student_model_baseline = AutoModelForCausalLM.from_pretrained(
-        student_model_name, torch_dtype=dtype
-    ).to(device)
-    student_optimizer_baseline = torch.optim.AdamW(student_model_baseline.parameters(), lr=student_lr)
-    
-    print(f"Loaded BASELINE student model '{student_model_name}' on device '{device}' with dtype '{dtype}'.")
-    print(f"Baseline student optimizer: AdamW with lr={student_lr}.")
-    print(f"This baseline student model will persist across all {episodes} episode(s) for this seed.\n")
-
-    # Initialize teacher model ONCE per seed (persists and learns across all episodes)
-    num_buckets = len(buckets)
-    
-    teacher_model = init_teacher_model(
-        K=num_buckets,
+        student_model_name=student_model_name,
+        student_lr=student_lr,
+        teacher_lr=teacher_lr,
+        teacher_hidden_dim=teacher_hidden_dim,
+        val_batch_size=val_batch_size,
+        test_batch_size=test_batch_size,
         device=device,
-        hidden_dim=teacher_hidden_dim,
     )
-    teacher_optimizer = torch.optim.Adam(teacher_model.parameters(), lr=teacher_lr)
-    print(f"Initialized teacher model (MLP) with input_dim={num_buckets * 2 + 1}, hidden_dim={teacher_hidden_dim}, output_dim={num_buckets}, size = {sum(p.numel() for p in teacher_model.parameters())} parameters.")
-    print(f"Teacher optimizer: Adam with lr={teacher_lr}.")
-    print(f"This teacher model will persist and learn across all {episodes} episode(s) for this seed.\n")
 
+    method_runs = []
     for ep in range(episodes):
-        print(f"\n\n######## Seed={seed} Episode={ep} | Curriculum ########\n")
-        curriculum_run = run_episode(
-            D_tr=D_tr,
-            D_val_curve=D_val_curve,
-            D_test=D_test,
-            buckets=buckets,
+        print(f"\n\n######## Seed={seed} Episode={ep} | {method} ########\n")
+        episode_run = run_episode(
+            D_tr=experiment["D_tr"],
+            D_val_curve=experiment["D_val_curve"],
+            D_test=experiment["D_test"],
+            buckets=experiment["buckets"],
             T=T,
             B=B,
-            student_model=student_model_curriculum,
-            student_tokenizer=student_tokenizer,
-            student_optimizer=student_optimizer_curriculum,
-            teacher_model=teacher_model,
-            teacher_optimizer=teacher_optimizer,
+            student_model=experiment["student_model"],
+            student_tokenizer=experiment["student_tokenizer"],
+            student_optimizer=experiment["student_optimizer"],
+            teacher_model=experiment["teacher_model"],
+            teacher_optimizer=experiment["teacher_optimizer"],
             val_batch_size=val_batch_size,
             seed=seed,
             episode_id=ep,
-            student_lr=student_lr,
-            teacher_lr=teacher_lr,
-            teacher_hidden_dim=teacher_hidden_dim, 
-            gamma=gamma, 
-            lambda_cost=lambda_cost, 
-            alpha_stability=alpha_stability, 
-            use_advantage_baseline=use_advantage_baseline,
-            baseline_type=baseline_type,
-            normalize_advantage=normalize_advantage,
-            device=device,
-            max_length=max_length,
-            use_teacher=True, # MAIN difference between curriculum and baseline runs - whether teacher is used or not
-            enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
-        )
-        curriculum_runs.append(curriculum_run)
-
-        clear_device_memory()
-
-        print(f"\n\n######## Seed={seed} Episode={ep} | Baseline ########\n")
-        baseline_run = run_episode(
-            D_tr=D_tr,
-            D_val_curve=D_val_curve,
-            D_test=D_test,
-            buckets=buckets,
-            T=T,
-            B=B,
-            student_model=student_model_baseline,
-            student_tokenizer=student_tokenizer,
-            student_optimizer=student_optimizer_baseline,
-            teacher_model=teacher_model,
-            teacher_optimizer=teacher_optimizer,
-            val_batch_size=val_batch_size, 
-            seed=seed,
-            episode_id=ep,
+            global_val_curve_batch=experiment["fixed_val_curve_batch"],
+            global_test_batch=experiment["fixed_test_batch"],
             student_lr=student_lr,
             teacher_lr=teacher_lr,
             teacher_hidden_dim=teacher_hidden_dim,
             gamma=gamma,
             lambda_cost=lambda_cost,
             alpha_stability=alpha_stability,
-            use_advantage_baseline=use_advantage_baseline, 
+            use_advantage_baseline=use_advantage_baseline,
             baseline_type=baseline_type,
             normalize_advantage=normalize_advantage,
             device=device,
             max_length=max_length,
-            use_teacher=False, ## 
-            enable_wandb=enable_wandb,  # forward wandb toggle to episode runner
+            use_teacher=use_teacher,
+            enable_wandb=enable_wandb,
         )
-        baseline_runs.append(baseline_run)
-
+        method_runs.append(episode_run)
         clear_device_memory()
 
-    # Per-seed progress summary after all episodes for this seed
-    print(f"\n\n========== SEED {seed} PROGRESS SUMMARY ==========")
-    if curriculum_runs:
-        curriculum_avg_test_loss = mean([r['final_test_loss'] for r in curriculum_runs])  # Avg final test loss (curriculum)
-        curriculum_avg_test_acc = mean([r['final_test_acc'] for r in curriculum_runs])  # Avg final test accuracy (curriculum)
-        curriculum_avg_convergence = mean([r['convergence_step'] for r in curriculum_runs])  # Avg convergence step (curriculum)
-        curriculum_avg_clipped_ratio = mean([r['general_clipped_ratio'] for r in curriculum_runs])  # Avg clipped ratio (curriculum)
-        print(f"Curriculum - Avg final test loss: {curriculum_avg_test_loss:.6f}")
-        print(f"Curriculum - Avg final test accuracy: {curriculum_avg_test_acc:.6f}")
-        print(f"Curriculum - Avg convergence step: {curriculum_avg_convergence:.2f}")
-        # print(f"Curriculum - Avg clipped ratio: {curriculum_avg_clipped_ratio:.4f}")
-    if baseline_runs:
-        baseline_avg_test_loss = mean([r['final_test_loss'] for r in baseline_runs])  # Avg final test loss (baseline)
-        baseline_avg_test_acc = mean([r['final_test_acc'] for r in baseline_runs])  # Avg final test accuracy (baseline)
-        baseline_avg_convergence = mean([r['convergence_step'] for r in baseline_runs])  # Avg convergence step (baseline)
-        baseline_avg_clipped_ratio = mean([r['general_clipped_ratio'] for r in baseline_runs])  # Avg clipped ratio (baseline)
-        print(f"Baseline   - Avg final test loss: {baseline_avg_test_loss:.6f}")
-        print(f"Baseline   - Avg final test accuracy: {baseline_avg_test_acc:.6f}")
-        print(f"Baseline   - Avg convergence step: {baseline_avg_convergence:.2f}")
-        # print(f"Baseline   - Avg clipped ratio: {baseline_avg_clipped_ratio:.4f}")
-    if curriculum_runs and baseline_runs:
-        loss_improvement = baseline_avg_test_loss - curriculum_avg_test_loss  # Loss improvement (curriculum better if positive)
-        convergence_improvement = baseline_avg_convergence - curriculum_avg_convergence  # Convergence improvement (curriculum better if positive)
-        print(f"\nCurriculum vs Baseline:")
-        print(f"  Loss improvement (lower is better): {loss_improvement:.6f} {'✓ Curriculum better' if loss_improvement > 0 else '✗ Baseline better'}")
-        print(f"  Convergence improvement (lower is better): {convergence_improvement:.2f} {'✓ Curriculum converges faster' if convergence_improvement > 0 else '✗ Baseline converges faster'}")
-        print(f"  Accuracy improvement (higher is better): {curriculum_avg_test_acc - baseline_avg_test_acc:.6f} {'✓ Curriculum better' if curriculum_avg_test_acc > baseline_avg_test_acc else '✗ Baseline better'}")
-    print(f"=========================================\n")
-    
-    # Log per-seed comparison plot to wandb
-    if enable_wandb and wandb is not None and wandb.run is not None:
-        log_seed_comparison_to_wandb(curriculum_runs, baseline_runs, seed)
+    summarize_runs(method, method_runs)
 
-    summarize_runs("Curriculum (REINFORCE Teacher)", curriculum_runs)
-    summarize_runs("Vanilla SFT Baseline", baseline_runs)
     run_end_time = datetime.datetime.now()
     run_duration = run_end_time - run_start_time
-    
     print("\n========== RUN END ==========")
     print(f"[RUN END] {run_end_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Total run duration: {str(run_duration).split('.')[0]}")
     print("============================\n")
-    if enable_wandb and wandb is not None and wandb.run is not None:  # close wandb run cleanly
-        wandb.finish()  # flush metrics and finalize run
-    return {"curriculum_runs": curriculum_runs, "baseline_runs": baseline_runs}
+
+    if enable_wandb and wandb is not None and wandb.run is not None:
+        wandb.finish()
+    return {"method": method, "runs": method_runs}
 
 
 if __name__ == "__main__":
@@ -1073,13 +895,15 @@ if __name__ == "__main__":
     
     # === EXPERIMENT & REPRODUCIBILITY ===
     parser.add_argument("--seed", type=int, default=11, help="Random seed for reproducibility")
+    parser.add_argument("--method", type=str, choices=["curriculum", "baseline"], required=True, help="Training method to run: curriculum uses the REINFORCE teacher; baseline uses uniform bucket sampling.")
     parser.add_argument("--episodes", type=int, default=1, help="Number of episodes per seed")
-    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"], help="Compute device")
+    parser.add_argument("--device", default="cuda", choices=["auto", "cpu", "mps", "cuda"], help="Compute device")
     
     # === TRAINING LOOP ===
     parser.add_argument("--steps", type=int, default=20, help="Number of training steps per episode (T)")
     parser.add_argument("--batch_size", type=int, default=8, help="Training batch size (B)")
     parser.add_argument("--val_batch_size", type=int, default=8, help="Validation batch size")
+    parser.add_argument("--test_batch_size", type=int, default=None, help="Test batch size. If None, use val_batch_size.")
     parser.add_argument("--max_length", type=int, default=512, help="Maximum sequence length for tokenization")
     
     # === STUDENT MODEL ===
@@ -1109,11 +933,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_final_evaluation(
+        method=args.method,
         seed=args.seed,
         episodes=args.episodes,
         T=args.steps,
         B=args.batch_size,
         val_batch_size=args.val_batch_size,
+        test_batch_size=args.test_batch_size if args.test_batch_size is not None else args.val_batch_size,
         student_model_name=args.student_model_name,
         student_lr=args.student_lr,
         teacher_lr=args.teacher_lr,

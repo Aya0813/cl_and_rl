@@ -10,3 +10,6 @@ wandb/
 *.bin
 
 question_answers_hashqq.txt
+scripts/training_loop_latest.py
+
+scripts/training_loop_og.py
