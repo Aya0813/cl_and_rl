@@ -71,9 +71,6 @@ Define buckets on training set:
     {I_k}_{k=1}^K
     # e.g. easy, medium, hard based on difficulty labels
 
-Initialize:
-    student parameters θ_0
-    teacher parameters φ
 
 Set hyperparameters (PoC): 
     episodes    = 100                           
@@ -92,11 +89,13 @@ Initialize running bucket statistics:
     avg_loss_per_bucket
     change_in_loss_per_bucket
 
-initialize SEPARATE student model & optimizer for baseline AND curriculum
+
+Initialize:
+    teacher -> parameters φ (one teacher through all episodes)
 
 for each episode: 
 
-    initialize student
+    initialize student [ θ_0 ] (new student initialized for each episode) -> SEPARATE student model & optimizer for baseline AND curriculum
     for t in 0 ... T-1:
 
         # 1. Construct teacher observation
@@ -163,7 +162,7 @@ for each episode:
     
     episode_baseline = mean (q_0, q_1, ..., q_{T-1})    # over the steps in an episode
     for t in range(T): 
-        A_t = q_t - episode_baseline
+        A_t = q_t - episode_baseline                    # computing the avantage 
     
     # Compute policy gradient
     total_gradient = 0
@@ -181,19 +180,31 @@ Compare against vanilla SFT baseline using:
     - convergence speed
 
 
+# ---------------------------------------------------------------------------------------
+So the full loop is:
+- Buckets hold lists of training examples grouped by level.
+- Teacher outputs probabilities over buckets.
+- Batch sampler picks bucket indices using those probabilities.
+- Sampler picks concrete examples from those buckets.
+- Student trains on those examples.
+- Losses are aggregated back by bucket.
+- Teacher sees updated bucket stats and adjusts future probabilities.
 
-##################################################################################
-VISUAL EXAMPLES TO UNDERSTAND FURTHER: 
+# ---------------------------------------------------------------------------------------
+After sampling the training_batch -> the big picture becomes: 
+- training_batch = which examples we used
+- sampled_bucket_indices = which bucket each example came from
+- per_example_losses = how hard each example was for the student
+- update_bucket_loss_stats = compress all that into per-bucket difficulty signals
 
-
-Seed 11:
-├─ Episode 0
-│  ├─ Curriculum: student_curriculum learns with teacher guidance
-│  └─ Baseline: student_baseline learns uniformly (no teacher)
-├─ Episode 1
-│  ├─ Curriculum: student_curriculum learns more (continues from ep0)
-│  └─ Baseline: student_baseline learns more (continues from ep0)
-└─ Episode 2
-   ├─ Curriculum: student_curriculum learns more (continues from ep1)
-   └─ Baseline: student_baseline learns more (continues from ep1) 
-   ..... 
+# -----------------------BUILDING the observation o_t -----------------------------------
+    - batch_avg_loss
+        - average loss for a bucket in just the current batch
+        - noisy but very fresh
+    - running_avg_loss
+        - smoothed version across many steps
+        - more stable, less noisy
+    - And loss_change
+        - how much running_avg_loss moved this step
+        - tells the teacher not just “how hard is this bucket?” but also “is it improving or getting worse?”
+    

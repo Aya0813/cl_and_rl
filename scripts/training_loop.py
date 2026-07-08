@@ -86,6 +86,7 @@ def evaluate_loss_accuracy(student_model, student_tokenizer, batch_examples, dev
         preds = outputs.logits.argmax(dim=-1) # [ TO DIVE DEEPER LATER ] outputs.logits has shape (batch_size, seq_len, vocab_size). By calling argmax(dim=-1), we get the index of the highest logit for each position in the sequence, which corresponds to the predicted token ID. This gives us a tensor of shape (batch_size, seq_len) containing the predicted token IDs for each example in the batch. 
         valid = labels != -100
         acc = 0.0 if valid.sum().item() == 0 else float((preds[valid] == labels[valid]).float().mean().item()) # This line computes the token-level accuracy for the predicted tokens compared to the true labels, but only for the valid positions (where labels != -100). Here's a breakdown:
+        
         # 1. valid = labels != -100: This creates a boolean mask that is True for positions where the label is not -100 (i.e., valid tokens) and False for positions where the label is -100 (which are ignored in loss computation).
         # 2. preds[valid] == labels[valid]: This compares the predicted token IDs to the true token IDs, but only at the valid positions. It returns a boolean tensor that is True where the prediction is correct and False where it is incorrect.
         # 3. (preds[valid] == labels[valid]).float().mean(): This converts the boolean tensor to float (1.0 for correct predictions, 0.0 for incorrect) and then takes the mean to compute the average accuracy across all valid tokens.
@@ -218,10 +219,10 @@ def run_episode(
     # ===== EXPERIMENT CONDITION (not CLI arg, controlled in loop) =====
     use_teacher=True,      # Whether to use curriculum learning (teacher) vs baseline - False = vanilla uniform sampling
 ):
-    
-    random.seed(seed)
-    torch.manual_seed(seed) 
-    torch.cuda.manual_seed_all(seed)
+    episode_seed = seed + episode_id  # ensure different seed per episode for reproducibility
+    random.seed(episode_seed)
+    torch.manual_seed(episode_seed)
+    torch.cuda.manual_seed_all(episode_seed)
     clear_device_memory()
     
     # Student and teacher models are passed in as persistent across episodes
@@ -255,7 +256,7 @@ def run_episode(
 
 
         for t in range(T): 
-    
+            
             global_step = episode_id * T + t
             step_start = time.perf_counter()
             print(f"\n*** Step {t + 1}/{T} | {'Curriculum' if use_teacher else 'Baseline'} ***")
@@ -316,6 +317,7 @@ def run_episode(
                 B=B,
                 seed=seed + (episode_id * 1000) + t, # ensure different sampling each step and episode (note that it is t dependant - unlike test sampling)
             )
+            # sampled_bucket_indices = “which pool each training example came from”
 
             bucket_counts = {
                 k: sampled_bucket_indices.count(k)
@@ -334,6 +336,7 @@ def run_episode(
             # 5) Sample one validation batch from fixed D_val -> AT EACH STEP
             print("\n----- (5) Sample validation batch -----")
             val_batch = sample_uniform_batch(D_val_curve, m=clamp_batch_size(len(D_val_curve), val_batch_size), seed=seed + 30_000 + t)
+            # notice = we re not including episode_id in the validation sampling seed -> which makes episode-to-episode comparisons cleaner [ can be modified later to be more statistically robust]
             print(f"Sampled validation batch of size {len(val_batch)} at step {t + 1} for reward evaluation (seed {seed}). This batch is freshly sampled each step to compute the reward signal based on immediate validation improvement.\n")
             print (f"Validation batch of length {len(val_batch)}:")
             if val_batch:
@@ -345,7 +348,7 @@ def run_episode(
             val_loss_before, _ = evaluate_loss_accuracy( 
                 student_model=student_model,
                 student_tokenizer=student_tokenizer,
-                batch_examples=val_batch, # <-- Uses the sampled val_batch
+                batch_examples=val_batch, # <-- Uses the sampled val_batch 
                 device=device,
                 max_length=max_length, 
                     # do we need max_length here if we're just computing losses? - yes because the model's forward pass might still require it, even if we're not doing any generation. 
@@ -403,6 +406,7 @@ def run_episode(
                 max_length=max_length, 
             ) # what is per_example_losses? -> It's a list of loss values, one for each example in the training batch, computed by evaluating the student model on each example individually. This allows us to see how well the student is performing on each specific example, which we can then aggregate by bucket to update our running statistics for the teacher's observation. By having per-example losses, we can compute the average loss for each bucket and track how it changes over time, which is crucial information for the teacher to make informed decisions about curriculum sampling.
 
+            # take the examples we just trained on, look at which bucket each one came from, look at each example’s loss, then summarize that information per bucket.
             stats = update_bucket_loss_stats(
                 batch_examples=training_batch,
                 bucket_labels=sampled_bucket_indices,
@@ -417,7 +421,7 @@ def run_episode(
             val_loss_after, _ = evaluate_loss_accuracy( # note -> this is for the reward signal and reflects immediate improvement on a random sample (which can fluctuate).
                 student_model=student_model,
                 student_tokenizer=student_tokenizer,
-                batch_examples=val_batch, # <-- SAME val_batch (not resampled)
+                batch_examples=val_batch, # <-- SAME val_batch as the one used for BEFORE the update (not resampled)
                 device=device,
                 max_length=max_length,
             )
@@ -450,6 +454,7 @@ def run_episode(
                 device=device,
                 max_length=max_length,
             )
+            
             # This computes the validation loss and accuracy on a global fixed validation batch (global_val_curve_batch) that was sampled once at the start of the seed (before all episodes) and stays the same for all steps across all episodes.
             # This value is used to build a consistent validation curve across all episodes, so you can plot how the model improves on the same set of examples over time and across episodes.
             # val_loss_after → reward calculation, fresh batch each step
@@ -479,10 +484,13 @@ def run_episode(
                     "train/loss": train_loss,
                     "reward/value": reward,
                     "reward/validation_improvement": validation_improvement,
+                    "reward_val_batch/loss_before": val_loss_before,
+                    "reward_val_batch/loss_after": val_loss_after,
                     "per_step_val_curve/loss": per_step_val_curve_loss,
                     "per_step_val_curve/acc": per_step_val_curve_acc,
-                    # "episode/id": episode_id,
-                    # **{f"bucket/prob_{i}": prob for i, prob in enumerate(teacher_probs)},
+                    "episode/id": episode_id,
+                    **{f"bucket/prob_{i}": prob for i, prob in enumerate(teacher_probs)},
+                    # ** -> unpack the dictionary of bucket probabilities into individual key-value pairs for logging
                 }, step = global_step)  # close step-level wandb payload
 
                 # SUMMARY of what's GREAT To log: 
@@ -672,22 +680,27 @@ def setup_experiment(
 
     bucket_keys = sorted(buckets_raw.keys())
     buckets = {i: buckets_raw[k] for i, k in enumerate(bucket_keys)}
+    
     print(f"Bucket keys: {bucket_keys}")
     print("Bucket sizes:")
     for i, k in enumerate(bucket_keys):
         print(f"  {i} ({k}): {len(buckets[i])} examples")
 
-    m_val = clamp_batch_size(len(D_val_curve), val_batch_size)
+    m_val = clamp_batch_size(len(D_val_curve), val_batch_size) # basically m_val = val_batch_size 
     m_test = clamp_batch_size(len(D_test), test_batch_size)
+    
     if device == "mps":
         m_val = min(m_val, 4)
         m_test = min(m_test, 4)
 
+    
+    # SAMPLE A FIXED validation batch and a FIXED test batch # 
     fixed_val_curve_batch = sample_uniform_batch(
         D_val_curve,
         m=m_val,
         seed=seed + 10_000,
     )
+
     fixed_test_batch = sample_uniform_batch(
         D_test,
         m=m_test,
@@ -695,6 +708,8 @@ def setup_experiment(
     )
 
     dtype = torch.float16 if device in ["cuda", "mps"] else torch.float32
+    
+    # ####### DEFINE STUDENT ####### # 
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_model = AutoModelForCausalLM.from_pretrained(
         student_model_name,
@@ -702,12 +717,15 @@ def setup_experiment(
     ).to(device)
     student_optimizer = torch.optim.AdamW(student_model.parameters(), lr=student_lr)
 
+    # ####### DEFINE TEACHER ####### #
     teacher_model = init_teacher_model(
         K=len(buckets),
         device=device,
         hidden_dim=teacher_hidden_dim,
     )
     teacher_optimizer = torch.optim.Adam(teacher_model.parameters(), lr=teacher_lr)
+
+    ##
 
     print(f"Loaded student model '{student_model_name}' on device '{device}' with dtype '{dtype}'.")
     print(f"Student optimizer: AdamW with lr={student_lr}.")

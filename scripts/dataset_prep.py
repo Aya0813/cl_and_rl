@@ -20,7 +20,7 @@ def prepare_math_dataset(
     if abs((train_ratio + val_ratio + holdout_ratio) - 1.0) > 1e-8:
         raise ValueError("train_ratio + val_ratio + holdout_ratio must equal 1.0")
 
-    # Load the full dataset split.
+    # Load the full dataset split. 
     dataset = load_dataset("EleutherAI/hendrycks_math", 'algebra', split="train")
 
     # Keep only rows that have a "level" label.
@@ -83,7 +83,7 @@ def prepare_math_dataset(
         buckets[ex["level"]].append(ex)
 
     buckets = dict(sorted(buckets.items(), key=lambda x: str(x[0]))) # buckets looks like: {'1': [ex1, ex7], '2': [ex3, ex9, ex11], '3': [ex2]}...
-    return D_tr, D_val, D_holdout, buckets
+    return D_tr, D_val, D_holdout, buckets # KEY INFO here to keep in mind -> the buckets are built from D_tr only, not from D_val or D_holdout. This is important for training and evaluation consistency.
 
 
 def sample_batch_from_buckets(buckets, a_t, B, seed=None):

@@ -12,17 +12,35 @@ def update_bucket_loss_stats(
     Update running loss statistics per bucket.
 
     Args:
-        batch_examples: batch of examples (kept for interface completeness; not used)
-        bucket_labels: list of bucket labels (same length as losses)
-        losses: list of per-example losses
+        batch_examples: batch of examples (kept for interface completeness; not used) -> will be the training_batch 
+        bucket_labels: list of bucket labels (same length as losses) -> will be sampled_bucket_indices
+        losses: list of per-example losses 
         stats: running stats dict to update in-place
-        alpha: EMA factor (0 < alpha <= 1)
+        alpha: EMA factor (0 < alpha <= 1) -> 
 
     Returns:
         stats dict with keys:
-          - running_avg_loss: dict[bucket -> float]
-          - loss_change: dict[bucket -> float]
-          - batch_avg_loss: dict[bucket -> float] (for buckets seen this batch)
+          - running_avg_loss : dict[bucket -> float] 
+          - loss_change      : dict[bucket -> float]
+          - batch_avg_loss   : dict[bucket -> float] (for buckets seen this batch) -> for this current training batch only, what was the avg loss of examples from each bucket 
+    
+    Further explanation: what does each one of the above tell us???? 
+          - running_avg_loss : how hard each bucket currently is? [ memory across steps unlike batch_avg_loss for only this current training step ]
+          - loss_change      : whether that bucket is improving or worsening? 
+
+          this compressed summary per bucket is what later gets turned into the teacher observation in build_teacher_observation() function 
+
+
+    - batch_avg_loss
+        - average loss for a bucket in just the current batch
+        - noisy but very fresh
+    - running_avg_loss
+        - smoothed version across many steps
+        - more stable, less noisy
+    - And loss_change
+        - how much running_avg_loss moved this step
+        - tells the teacher not just “how hard is this bucket?” but also “is it improving or getting worse?”
+    
     """
     _ = batch_examples      # not needed now, but included as requested by task inputs
 
@@ -41,9 +59,14 @@ def update_bucket_loss_stats(
     # Compute batch average loss per bucket for buckets appearing in this batch.
     sums = defaultdict(float)
     counts = defaultdict(int)
-    for b, l in zip(bucket_labels, losses):
-        sums[b] += float(l)
-        counts[b] += 1
+    for b, l in zip(bucket_labels, losses): 
+        sums[b] += float(l)     # sum up the losses for each bucket
+        counts[b] += 1          # count how many examples are in each bucket
+    
+    # at the end: 
+        # sums = {0: 1.0, 1: 0.7, 2: 2.2}
+        # counts = {0: 2, 1: 1, 2: 2}
+    # then compute the avg loss per bucket 
 
     batch_avg_loss = {b: sums[b] / counts[b] for b in counts}
     running_avg_loss = stats.get("running_avg_loss", {})
