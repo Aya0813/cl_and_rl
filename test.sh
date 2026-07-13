@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=s_and_ep
+#SBATCH --job-name=small_test
 
 #SBATCH --chdir=/home/aya.elmir/cl_and_rl
 #SBATCH --output=/home/aya.elmir/cl_and_rl/logs/%x_%j.out
@@ -156,30 +156,296 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 
 
+# python scripts/training_loop.py \
+#   --method curriculum \
+#   --seed 11 \
+#   --episodes 10 \
+#   --steps 20 \
+#   --batch_size 15 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name curriculum_seed11
+
+# # and:
+
+# python scripts/training_loop.py \
+#   --method baseline \
+#   --seed 11 \
+#   --episodes 10 \
+#   --steps 20 \
+#   --batch_size 15 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name baseline_seed11
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --episodes 2 \
+#   --steps_per_episode 10 \
+#   --eval_steps 10 \
+#   --batch_size 10 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name test
+
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --episodes 5 \
+#   --steps_per_episode 10 \
+#   --eval_steps 10 \
+#   --batch_size 10 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name first_meaningful_full_pipeline_seed11
+
+
+
+# COMPARISON 
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 20 \
+#   --batch_size 25 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name cl_full_pipeline_seed11_b25_steps20
+
+
+
+# python scripts/training_loop.py \
+#   --mode eval_uniform \
+#   --device cuda \
+#   --seed 11 \
+#   --eval_steps 20 \
+#   --batch_size 25 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name baseline_uniform_seed11_b25_steps20
+
+
+# 14 juillet 
+
+# check wandb for details 
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 1 \
+#   --steps_per_episode 2 \
+#   --eval_steps 2 \
+#   --batch_size 4 \
+#   --val_batch_size 8 \
+#   --test_batch_size 8 \
+#   --max_length 256 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name smoke_all_namespaces_seed11
+
+
+# ended up being an issue with the frozen teacher and eval uniform modes with properly logging into WANDB 
+
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 1 \
+#   --steps_per_episode 2 \
+#   --eval_steps 2 \
+#   --batch_size 4 \
+#   --val_batch_size 8 \
+#   --test_batch_size 8 \
+#   --max_length 256 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name smoke_all_namespaces_offset_fix_seed11
+
+
+# logging should be fine now... 
+
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 5 \
+#   --steps_per_episode 10 \
+#   --eval_steps 10 \
+#   --batch_size 10 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed11_ep5_steps10_b10_rerun
+
+
+
+# Since batch_size > 10 is what seems to blow up, I would not push batch size next. The safest next move is to increase the things that improve the experiment signal without changing peak memory much:
+# keep batch_size=10
+# keep val_batch_size=32
+# keep max_length=512
+# increase episodes
+# increase steps_per_episode
+
+
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 33 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 20 \
+#   --batch_size 10 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed33_ep10_steps20_b10
+
+
+# just following ce que GPT recommend to run next ... 
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 20 \
+#   --batch_size 15 \
+#   --val_batch_size 32 \
+#   --test_batch_size 32 \
+#   --max_length 256 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed11_ep10_steps20_b15_len256
+
+
 python scripts/training_loop.py \
-  --method curriculum \
+  --mode full_pipeline \
+  --device cuda \
   --seed 11 \
   --episodes 10 \
-  --steps 20 \
+  --steps_per_episode 20 \
+  --eval_steps 20 \
   --batch_size 15 \
-  --val_batch_size 32 \
-  --test_batch_size 32 \
+  --val_batch_size 16 \
+  --test_batch_size 16 \
+  --max_length 512 \
+  --student_lr 1e-5 \
+  --teacher_lr 1e-3 \
+  --teacher_hidden_dim 32 \
+  --gamma 0.95 \
+  --use_advantage_baseline 1 \
+  --baseline_type mean_return \
+  --normalize_advantage 1 \
+  --lambda_cost 0.0 \
+  --alpha_stability 0.0 \
   --wandb 1 \
   --wandb_project cl-rl \
   --wandb_entity CL-and-RL \
-  --wandb_run_name curriculum_seed11
-
-# and:
-
-python scripts/training_loop.py \
-  --method baseline \
-  --seed 11 \
-  --episodes 10 \
-  --steps 20 \
-  --batch_size 15 \
-  --val_batch_size 32 \
-  --test_batch_size 32 \
-  --wandb 1 \
-  --wandb_project cl-rl \
-  --wandb_entity CL-and-RL \
-  --wandb_run_name baseline_seed11
+  --wandb_run_name fp_seed11_ep10_steps20_b15_val16

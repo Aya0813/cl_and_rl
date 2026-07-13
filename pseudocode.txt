@@ -207,4 +207,10 @@ After sampling the training_batch -> the big picture becomes:
     - And loss_change
         - how much running_avg_loss moved this step
         - tells the teacher not just “how hard is this bucket?” but also “is it improving or getting worse?”
-    
+
+
+# ----------------------- NEW SETUP -----------------------------------
+- one episode = one rollout / one trajectory
+- inside that episode, the student trains for teacher_train_steps steps
+- across those steps, you collect rewards and log_probs
+- then at the end of the episode, you do one REINFORCE update to the teacher

@@ -67,7 +67,7 @@ def init_teacher_model(K, device, hidden_dim=32):
     return model
 
 
-def build_teacher_observation(step_t, stats, K, T, device): # [ TO DIVE INTO IT DEEPLY LATER ]
+def build_teacher_observation(step_t, stats, K, T, device): # DIVE DEEPER LATER !!! 
     """
     o_t = (current step, running avg loss per bucket, running change per bucket)
     """
@@ -185,6 +185,8 @@ def discounted_returns(rewards, gamma):
     q = []
     running = 0.0
     for r in reversed(rewards):
+        # reversed because we want to compute the discounted return starting from the last reward and moving backwards to the first reward. 
+        # This allows us to accumulate the future rewards while applying the discount factor gamma at each step, which is necessary for calculating the discounted returns correctly.
         running = float(r) + gamma * running
         q.append(running)
     q.reverse()

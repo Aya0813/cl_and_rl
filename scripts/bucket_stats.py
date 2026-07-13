@@ -28,7 +28,7 @@ def update_bucket_loss_stats(
           - running_avg_loss : how hard each bucket currently is? [ memory across steps unlike batch_avg_loss for only this current training step ]
           - loss_change      : whether that bucket is improving or worsening? 
 
-          this compressed summary per bucket is what later gets turned into the teacher observation in build_teacher_observation() function 
+        this compressed summary per bucket is what later gets turned into the teacher observation in build_teacher_observation() function 
 
 
     - batch_avg_loss
