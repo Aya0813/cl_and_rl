@@ -271,6 +271,8 @@ def run_episode(
 
         for t in range(T):
             global_step = step_offset + (episode_id * T) + t
+            eval_step = t  # remember episode_id for frozen teacher and uniform eval runs is 0  !! 
+            wandb_step = eval_step if run_phase in {"eval_frozen_teacher", "eval_uniform"} else global_step
             step_start = time.perf_counter()
             print(f"\n*** Step {t + 1}/{T} | {'Curriculum' if use_teacher else 'Baseline'} ***")
 
@@ -498,9 +500,8 @@ def run_episode(
                 step_metrics = {
                     "train/loss": train_loss,
                     "reward/value": reward,
-                    "reward/validation_improvement": validation_improvement,
-                    "reward_val_batch/loss_before": val_loss_before,
-                    "reward_val_batch/loss_after": val_loss_after,
+                    "val_loss_before": val_loss_before,
+                    "val_loss_after": val_loss_after,
                     "stepwise_fixed_val_curve/loss": stepwise_fixed_val_curve_loss,
                     "stepwise_fixed_val_curve/acc": stepwise_fixed_val_curve_acc,
                     "episode/id": episode_id,
@@ -514,8 +515,23 @@ def run_episode(
                 step_metrics.update({f"bucket/teacher_prob_{i}": prob for i, prob in enumerate(teacher_probs)})
                 step_metrics.update({f"bucket/sampled_fraction_{i}": frac for i, frac in sampled_bucket_fractions.items()})
                 step_metrics.update({f"bucket/uniform_reference_{i}": prob for i, prob in enumerate(p_ref)})
-                wandb.log(prefixed_metrics(run_phase, step_metrics), step=global_step)  # run_phase -> alredy passed as argument to run_episode 
+                wandb_payload = prefixed_metrics(run_phase, step_metrics)
+                if run_phase in {"eval_frozen_teacher", "eval_uniform"}: 
+                    wandb_payload[f"eval_step"] = eval_step
+                    wandb.log(wandb_payload) 
+                
+                else:  # training teacher case
+                    wandb_payload["global_step"] = global_step
+                    wandb.log(wandb_payload)  # run_phase -> alredy passed as argument to run_episode 
                     # after prefixing teacher probs for each bucket -> teacher_train/bucket/teacher_prob_0 ... 
+
+# for step in steps:
+#     run.log({
+#         "eval/step": step,
+#         "eval_a/acc": acc_a[step],
+#         "eval_b/acc": acc_b[step],
+#     })
+
 
             clear_device_memory() 
             ######## ######## ######## ######## ######## ########
@@ -605,23 +621,46 @@ def run_episode(
         # to know how QUICKLY the student model improved during training → whether the teacher's curriculum decisions led to FASTER convergence against baseline.
         # find the smallest loss in the episode_stepwise_fixed_val_curve_losses (which has T losses -> 1 per step) -> and save that step as the convergence step 
         # note -> in this context convergence means -> there is no loss that is lower
-        convergence_step = 1 + min(range(len(episode_stepwise_fixed_val_curve_losses)), key=lambda i: episode_stepwise_fixed_val_curve_losses[i])
-        print(
-            f"\nConvergence step (lowest validation loss): Step {convergence_step} "
-            f"with val_loss {episode_stepwise_fixed_val_curve_losses[convergence_step - 1]:.6f}"
-        )
+        # convergence_step = 1 + min(range(len(episode_stepwise_fixed_val_curve_losses)), key=lambda i: episode_stepwise_fixed_val_curve_losses[i])
+        # print(
+        #     f"\nConvergence step (lowest validation loss): Step {convergence_step} "
+        #     f"with val_loss {episode_stepwise_fixed_val_curve_losses[convergence_step - 1]:.6f}"
+        # )
 
-        # [ TO DIVE DEEPLER LATER ]
-        global_step_end = step_offset + (episode_id * T) + (T - 1)
-        if enable_wandb and wandb is not None and wandb.run is not None:
-            summary_metrics = {
-                "final_test_loss": final_ep_test_loss,
-                "final_test_acc": final_ep_test_acc,
-                "convergence_step": convergence_step,
-            }
-            if teacher_loss is not None:
-                summary_metrics["teacher_loss"] = teacher_loss
-            wandb.log(prefixed_metrics(run_phase, summary_metrics), step=global_step_end)
+        # SINCE I can already SEE which convergence faster (frozen teacher or uniform) from the loss plots -> NO NEED TO LOG convergence_step 
+            # MAKING THINGS MORE COMPLEX FOR NO REASON 
+
+
+        # [ TO IMPLEMENT LATER ]
+        # THE BELLOW LOGGING IS TOO COMPLEX FOR NO REASON (from meeting with Kirill) -> JUST REMOVE all of it for now and log it in a simpler way LATER ... 
+            # HOW? - could create another MODE called test_eval (as a toggle) -> and then log the final test loss and accuracy at the end of the episode (no need to log convergence step or other metrics)
+            
+
+
+        # global_step_end = step_offset + (episode_id * T) + (T - 1)
+        # eval_step_end = (episode_id * T) + (T - 1) 
+        # summary_wandb_step = eval_step_end if run_phase in {"eval_frozen_teacher", "eval_uniform"} else global_step_end
+
+        # if enable_wandb and wandb is not None and wandb.run is not None:
+        #     summary_metrics = {
+        #         "final_test_loss": final_ep_test_loss,
+        #         "final_test_acc": final_ep_test_acc,
+        #         "convergence_step": convergence_step,
+        #     }
+        #     if teacher_loss is not None:
+        #         summary_metrics["teacher_loss"] = teacher_loss
+        #     summary_payload = prefixed_metrics(run_phase, summary_metrics)
+        #     if run_phase in {"eval_frozen_teacher", "eval_uniform"}:
+        #         summary_payload[f"{run_phase}/eval_step"] = eval_step_end
+        #         wandb.log(summary_payload)
+        #     else:
+        #         summary_payload["_wandb_global_step"] = global_step_end
+        #         wandb.log(summary_payload, step=summary_wandb_step)
+
+        # MEETING WITH KIRILL NOTES 
+        # you could have an extra toggle called eval_final ... 
+            # there is no reason to create some seperate logging setp logic for wandb ... 
+
 
         # [ TO DIVE DEEPLER LATER ] find the best way to PLOT the end of episode metrics in the WANDB UI .... 
 
@@ -641,12 +680,12 @@ def run_episode(
             "updated_teacher_probs": updated_probs,
             "final_ep_test_loss": final_ep_test_loss,
             "final_ep_test_acc": final_ep_test_acc,
-            "convergence_step": convergence_step,
+            # "convergence_step": convergence_step,
             "bucket_stats": stats,
             "general_clipped_ratio": general_clipped_ratio,
             "batch_clipped_ratios": batch_clipped_ratios,
             "clipped_ratio_per_bucket": clipped_ratio_per_bucket,
-            "global_step_end": global_step_end,
+            # "global_step_end": global_step_end,
         }
     finally:
         clear_device_memory()
@@ -657,7 +696,7 @@ def summarize_runs(label, runs):
     print(f"Runs: {len(runs)}")
     print(f"Avg final held-out test loss: {mean([r['final_ep_test_loss'] for r in runs]):.6f}")
     print(f"Avg final held-out test accuracy: {mean([r['final_ep_test_acc'] for r in runs]):.6f}")
-    print(f"Avg convergence step: {mean([r['convergence_step'] for r in runs]):.2f}")
+    # print(f"Avg convergence step: {mean([r['convergence_step'] for r in runs]):.2f}")
     print(f"Avg step time (seconds): {mean([r['avg_step_time'] for r in runs]):.2f}")
 
 
@@ -1116,6 +1155,20 @@ def run_pipeline(
                 "teacher_checkpoint": teacher_checkpoint,
             },
         )
+        # wandb.define_metric("teacher_train/*", step_metric="_wandb_global_step")
+        # wandb.define_metric("eval_frozen_teacher/*", step_metric="eval_frozen_teacher/eval_step")
+        # wandb.define_metric("eval_uniform/*", step_metric="eval_uniform/eval_step")
+
+        wandb.define_metric("eval_step")
+        wandb.define_metric("eval_frozen_teacher/*", step_metric="eval_step")
+        wandb.define_metric("eval_uniform/*", step_metric="eval_step")
+
+        wandb.define_metric("global_step")
+        wandb.define_metric("teacher_train/*", step_metric="global_step")
+        
+
+
+
 
     if device == "mps":
         if B > 2:

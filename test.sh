@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=small_test
+#SBATCH --job-name=test
 
 #SBATCH --chdir=/home/aya.elmir/cl_and_rl
-#SBATCH --output=/home/aya.elmir/cl_and_rl/logs/%x_%j.out
-#SBATCH --error=/home/aya.elmir/cl_and_rl/logs/%x_%j.err
+#SBATCH --output=/home/aya.elmir/cl_and_rl/logs/17july/%x_%j.out
+#SBATCH --error=/home/aya.elmir/cl_and_rl/logs/17july/%x_%j.err
 
 #SBATCH --partition=gpuhigh2
 #SBATCH --account=inception-energy-llm
@@ -37,12 +37,8 @@ export WANDB_PROJECT="cl_and_rl"
 export WANDB_MODE="online"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-
-
-
 # Run test - worked ;)) 
 # python test_gpu.py
-
 
 # python scripts/training_loop.py --steps 1 --batch_size 1
 
@@ -281,8 +277,8 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --mode full_pipeline \
 #   --device cuda \
 #   --seed 11 \
-#   --episodes 1 \
-#   --steps_per_episode 2 \
+#   --episodes 5 \
+#   --steps_per_episode 5 \
 #   --eval_steps 2 \
 #   --batch_size 4 \
 #   --val_batch_size 8 \
@@ -300,7 +296,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --wandb 1 \
 #   --wandb_project cl-rl \
 #   --wandb_entity CL-and-RL \
-#   --wandb_run_name smoke_all_namespaces_seed11
+#   --wandb_run_name smoke_eval_step_added_seed11
 
 
 # ended up being an issue with the frozen teacher and eval uniform modes with properly logging into WANDB 
@@ -330,6 +326,32 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --wandb_project cl-rl \
 #   --wandb_entity CL-and-RL \
 #   --wandb_run_name smoke_all_namespaces_offset_fix_seed11
+
+
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 11 \
+#   --episodes 5 \
+#   --steps_per_episode 2 \
+#   --eval_steps 2 \
+#   --batch_size 4 \
+#   --val_batch_size 8 \
+#   --test_batch_size 8 \
+#   --max_length 256 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 1e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name smoke_eval_step_log_seed11
 
 
 # logging should be fine now... 
@@ -362,6 +384,9 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 
 
+##### REAL RUNS START FROM HERE #####
+
+
 # Since batch_size > 10 is what seems to blow up, I would not push batch size next. The safest next move is to increase the things that improve the experiment signal without changing peak memory much:
 # keep batch_size=10
 # keep val_batch_size=32
@@ -369,12 +394,10 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # increase episodes
 # increase steps_per_episode
 
-
-
 # python scripts/training_loop.py \
 #   --mode full_pipeline \
 #   --device cuda \
-#   --seed 33 \
+#   --seed 11 \
 #   --episodes 10 \
 #   --steps_per_episode 20 \
 #   --eval_steps 20 \
@@ -394,7 +417,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --wandb 1 \
 #   --wandb_project cl-rl \
 #   --wandb_entity CL-and-RL \
-#   --wandb_run_name fp_seed33_ep10_steps20_b10
+#   --wandb_run_name fp_seed11_ep10_steps20_b10_rerun_proper_logging
 
 
 # just following ce que GPT recommend to run next ... 
@@ -402,7 +425,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # python scripts/training_loop.py \
 #   --mode full_pipeline \
 #   --device cuda \
-#   --seed 11 \
+#   --seed 33 \
 #   --episodes 10 \
 #   --steps_per_episode 20 \
 #   --eval_steps 20 \
@@ -422,30 +445,123 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #   --wandb 1 \
 #   --wandb_project cl-rl \
 #   --wandb_entity CL-and-RL \
-#   --wandb_run_name fp_seed11_ep10_steps20_b15_len256
+#   --wandb_run_name fp_seed33_ep10_steps20_b15_len256
 
 
-python scripts/training_loop.py \
-  --mode full_pipeline \
-  --device cuda \
-  --seed 11 \
-  --episodes 10 \
-  --steps_per_episode 20 \
-  --eval_steps 20 \
-  --batch_size 15 \
-  --val_batch_size 16 \
-  --test_batch_size 16 \
-  --max_length 512 \
-  --student_lr 1e-5 \
-  --teacher_lr 1e-3 \
-  --teacher_hidden_dim 32 \
-  --gamma 0.95 \
-  --use_advantage_baseline 1 \
-  --baseline_type mean_return \
-  --normalize_advantage 1 \
-  --lambda_cost 0.0 \
-  --alpha_stability 0.0 \
-  --wandb 1 \
-  --wandb_project cl-rl \
-  --wandb_entity CL-and-RL \
-  --wandb_run_name fp_seed11_ep10_steps20_b15_val16
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 33 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 20 \
+#   --batch_size 15 \
+#   --val_batch_size 16 \
+#   --test_batch_size 16 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 3e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed33_ep10_steps20_b15_val16_changed_teacher_lr
+
+
+# changing the TEACHER LR to 3e-3 and 3e-4 to see if it helps the teacher learn better.
+# 3e-3 ended up being way better - so validating across seed 22 and 11 as well 
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 22 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 20 \
+#   --batch_size 15 \
+#   --val_batch_size 16 \
+#   --test_batch_size 16 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 3e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed22_ep10_steps20_b15_val16_len512_tlr3e-3
+
+
+# ONLY valid if you see SAME pattern with seed 22 and 11 
+# the seed-33 3e-3 curve is still separating at step 20 rather than flattening so more room for improvement - so increased to 100 eval steps instead of 20 to see if the teacher is still learning and improving the student..... 
+# python scripts/training_loop.py \
+#   --mode full_pipeline \
+#   --device cuda \
+#   --seed 22 \
+#   --episodes 10 \
+#   --steps_per_episode 20 \
+#   --eval_steps 100 \
+#   --batch_size 15 \
+#   --val_batch_size 16 \
+#   --test_batch_size 16 \
+#   --max_length 512 \
+#   --student_lr 1e-5 \
+#   --teacher_lr 3e-3 \
+#   --teacher_hidden_dim 32 \
+#   --gamma 0.95 \
+#   --use_advantage_baseline 1 \
+#   --baseline_type mean_return \
+#   --normalize_advantage 1 \
+#   --lambda_cost 0.0 \
+#   --alpha_stability 0.0 \
+#   --wandb 1 \
+#   --wandb_project cl-rl \
+#   --wandb_entity CL-and-RL \
+#   --wandb_run_name fp_seed22_ep10_steps20_eval100_b15_val16_len512_tlr3e-3
+
+
+# indeed all 3 seeds behave as expected :)) - now trying 2 more seeds on same 100 eval steps to see if the pattern holds !! 
+
+
+for SEED in 44 55; do
+  python scripts/training_loop.py \
+    --mode full_pipeline \
+    --device cuda \
+    --seed ${SEED} \
+    --episodes 10 \
+    --steps_per_episode 20 \
+    --eval_steps 100 \
+    --batch_size 15 \
+    --val_batch_size 16 \
+    --test_batch_size 16 \
+    --max_length 512 \
+    --student_lr 1e-5 \
+    --teacher_lr 3e-3 \
+    --teacher_hidden_dim 32 \
+    --gamma 0.95 \
+    --use_advantage_baseline 1 \
+    --baseline_type mean_return \
+    --normalize_advantage 1 \
+    --lambda_cost 0.0 \
+    --alpha_stability 0.0 \
+    --wandb 1 \
+    --wandb_project cl-rl \
+    --wandb_entity CL-and-RL \
+    --wandb_run_name fp_seed${SEED}_ep10_steps20_eval100_b15_val16_len512_tlr3e-3
+done
+
+
+# add de date of the current day l fou9 
+
+# suggestion de Kirill 
+  # call it reinforce with a baseline  
