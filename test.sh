@@ -533,12 +533,40 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # indeed all 3 seeds behave as expected :)) - now trying 2 more seeds on same 100 eval steps to see if the pattern holds !! 
 
 
-for SEED in 44 55; do
+# for SEED in 44 55; do
+#   python scripts/training_loop.py \
+#     --mode full_pipeline \
+#     --device cuda \
+#     --seed ${SEED} \
+#     --episodes 10 \
+#     --steps_per_episode 20 \
+#     --eval_steps 100 \
+#     --batch_size 15 \
+#     --val_batch_size 16 \
+#     --test_batch_size 16 \
+#     --max_length 512 \
+#     --student_lr 1e-5 \
+#     --teacher_lr 3e-3 \
+#     --teacher_hidden_dim 32 \
+#     --gamma 0.95 \
+#     --use_advantage_baseline 1 \
+#     --baseline_type mean_return \
+#     --normalize_advantage 1 \
+#     --lambda_cost 0.0 \
+#     --alpha_stability 0.0 \
+#     --wandb 1 \
+#     --wandb_project cl-rl \
+#     --wandb_entity CL-and-RL \
+#     --wandb_run_name fp_seed${SEED}_ep10_steps20_eval100_b15_val16_len512_tlr3e-3
+# done
+
+
+for SEED in 11 22 33; do
   python scripts/training_loop.py \
     --mode full_pipeline \
     --device cuda \
     --seed ${SEED} \
-    --episodes 10 \
+    --episodes 20 \
     --steps_per_episode 20 \
     --eval_steps 100 \
     --batch_size 15 \
@@ -557,7 +585,7 @@ for SEED in 44 55; do
     --wandb 1 \
     --wandb_project cl-rl \
     --wandb_entity CL-and-RL \
-    --wandb_run_name fp_seed${SEED}_ep10_steps20_eval100_b15_val16_len512_tlr3e-3
+    --wandb_run_name fp_seed${SEED}_ep20_steps20_eval100_b15_val16_len512_tlr3e-3
 done
 
 
