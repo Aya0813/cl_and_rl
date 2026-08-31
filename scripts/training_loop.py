@@ -4,7 +4,7 @@ import gc
 import random
 import time
 from pathlib import Path
-from statistics import mean
+from statistics import mean, stdev
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -183,6 +183,45 @@ def prefixed_metrics(prefix, metrics): # the prefix is the phase we're at
     return {f"{prefix}/{key}": value for key, value in metrics.items()} # if there is a metric prefix, we prepend it to each metric key for better organization in logging (e.g., "train/loss" instead of just "loss").
 
 
+def compute_curve_auc(values):
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return float(values[0])
+    return sum((values[i] + values[i + 1]) / 2.0 for i in range(len(values) - 1))
+
+
+def compute_paired_eval_stats(paired_results):
+    if not paired_results:
+        return None
+
+    final_teacher_losses = [pair["teacher"]["final_ep_test_loss"] for pair in paired_results]
+    final_uniform_losses = [pair["uniform"]["final_ep_test_loss"] for pair in paired_results]
+    paired_improvements = [
+        pair["uniform"]["final_ep_test_loss"] - pair["teacher"]["final_ep_test_loss"]
+        for pair in paired_results
+    ]
+    teacher_aucs = [compute_curve_auc(pair["teacher"]["episode_stepwise_fixed_val_curve_losses"]) for pair in paired_results]
+    uniform_aucs = [compute_curve_auc(pair["uniform"]["episode_stepwise_fixed_val_curve_losses"]) for pair in paired_results]
+    paired_auc_improvements = [uniform_auc - teacher_auc for teacher_auc, uniform_auc in zip(teacher_aucs, uniform_aucs)]
+
+    return {
+        "mean_final_loss_teacher": mean(final_teacher_losses),
+        "mean_final_loss_uniform": mean(final_uniform_losses),
+        "mean_paired_improvement": mean(paired_improvements),
+        "std_paired_improvement": stdev(paired_improvements) if len(paired_improvements) > 1 else 0.0,
+        "num_seeds_won": sum(improvement > 0 for improvement in paired_improvements),
+        "num_pairs": len(paired_results),
+        "mean_val_auc_teacher": mean(teacher_aucs),
+        "mean_val_auc_uniform": mean(uniform_aucs),
+        "mean_paired_auc_improvement": mean(paired_auc_improvements),
+        "paired_improvements": paired_improvements,
+        "teacher_aucs": teacher_aucs,
+        "uniform_aucs": uniform_aucs,
+        "paired_auc_improvements": paired_auc_improvements,
+    }
+
+
 def create_student(student_model_name, student_lr, device, dtype):
     tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     model = AutoModelForCausalLM.from_pretrained(
@@ -324,7 +363,7 @@ def run_episode(
             training_batch, sampled_bucket_indices = sample_batch_from_buckets(
                 buckets=buckets,
                 a_t=a_t,
-                B=B,
+                B=B, # B is batch size 
                 seed=seed + (episode_id * 1000) + t,
             )
 
@@ -345,10 +384,19 @@ def run_episode(
             print("Sampled bucket counts:", bucket_counts)
 
             print("\n----- (5) Sample validation batch -----")
+
+            # for TSCL SETUP 
+            # val_batch = sample_uniform_batch( # note -> sampled EVERY step
+            #     D_val_curve,
+            #     m=clamp_batch_size(len(D_val_curve), val_batch_size),
+            #     seed=seed + 30_000 + t, # now set so that -> ep1 step 2 and ep2 step 2 will have the same val_batch....  -> which is great as it makes the episodes comparable 
+            # )
+
+            # FOR validating B3DA whether uniform behaves as expected $ 
             val_batch = sample_uniform_batch( # note -> sampled EVERY step
                 D_val_curve,
                 m=clamp_batch_size(len(D_val_curve), val_batch_size),
-                seed=seed + 30_000 + t, # now set so that -> ep1 step 2 and ep2 step 2 will have the same val_batch.... 
+                seed=seed + 30_000, # SAME validation set across ALL training steps of an ep. 
             )
 
             print(
@@ -498,12 +546,16 @@ def run_episode(
             
             if enable_wandb and wandb is not None and wandb.run is not None: # log step metrics only when wandb is active
                 step_metrics = {
-                    "train/loss": train_loss,
+                    "train_loss": train_loss,
                     "reward/value": reward,
                     "val_loss_before": val_loss_before,
-                    "val_loss_after": val_loss_after,
+                    
+                    "val_loss_after": val_loss_after, # the one we care about now in this uniform PoC
+                    
+                    # on the FIXED val batch (the one fixed once at the start of the seed)
                     "stepwise_fixed_val_curve/loss": stepwise_fixed_val_curve_loss,
                     "stepwise_fixed_val_curve/acc": stepwise_fixed_val_curve_acc,
+                    
                     "episode/id": episode_id,
                     "step/id": t,
                     # could add step_time, batch_clipped_ratio, etc. LATER 
@@ -520,10 +572,16 @@ def run_episode(
                     wandb_payload[f"eval_step"] = eval_step
                     wandb.log(wandb_payload) 
                 
+                # CHANGE THE CODE LATER - if u wanna see in SAME figure both plots for "eval_frozen_teacher", "eval_uniform" -> then keep the thing of eval step
+                
+                # if run_phase in {"eval_uniform"}: 
+                #     wandb_payload[f"global_step"] = global_step
+                #     wandb.log(wandb_payload) 
                 else:  # training teacher case
                     wandb_payload["global_step"] = global_step
                     wandb.log(wandb_payload)  # run_phase -> alredy passed as argument to run_episode 
                     # after prefixing teacher probs for each bucket -> teacher_train/bucket/teacher_prob_0 ... 
+
 
 # for step in steps:
 #     run.log({
@@ -976,6 +1034,7 @@ def evaluate_frozen_teacher_phase(
         run_phase="eval_frozen_teacher",
         step_offset=step_offset,
     )
+    
     del student_model, student_optimizer, student_tokenizer
     clear_device_memory()
     return result
@@ -1052,10 +1111,30 @@ def evaluate_uniform_phase(
 
 
 def print_final_comparison(frozen_result, uniform_result):
+    paired_stats = compute_paired_eval_stats([{
+        "teacher": frozen_result,
+        "uniform": uniform_result,
+    }])
+    delta_final = paired_stats["paired_improvements"][0]
+    teacher_auc = paired_stats["teacher_aucs"][0]
+    uniform_auc = paired_stats["uniform_aucs"][0]
+    paired_auc_improvement = paired_stats["paired_auc_improvements"][0]
+
     print("\n========== Final Comparison ==========")
     print(f"{'Run':<24} {'Final Test Loss':<18} {'Final Test Acc':<18}")
     print(f"{'Frozen Teacher':<24} {frozen_result['final_ep_test_loss']:<18.6f} {frozen_result['final_ep_test_acc']:<18.6f}")
     print(f"{'Uniform Baseline':<24} {uniform_result['final_ep_test_loss']:<18.6f} {uniform_result['final_ep_test_acc']:<18.6f}")
+    print()
+    print("Paired metrics (teacher vs uniform, same seed / same eval data):")
+    print(f"Delta_final = L_uniform_final - L_teacher_final = {delta_final:.6f}")
+    print(f"Mean final loss for teacher: {paired_stats['mean_final_loss_teacher']:.6f}")
+    print(f"Mean final loss for uniform: {paired_stats['mean_final_loss_uniform']:.6f}")
+    print(f"Mean paired improvement: {paired_stats['mean_paired_improvement']:.6f}")
+    print(f"Std paired improvement: {paired_stats['std_paired_improvement']:.6f}")
+    print(f"Number of seeds won: {paired_stats['num_seeds_won']} / {paired_stats['num_pairs']}")
+    print(f"Mean validation-loss AUC for teacher: {paired_stats['mean_val_auc_teacher']:.6f}")
+    print(f"Mean validation-loss AUC for uniform: {paired_stats['mean_val_auc_uniform']:.6f}")
+    print(f"Paired AUC improvement (uniform - teacher): {paired_stats['mean_paired_auc_improvement']:.6f}")
     print("=====================================\n")
 
 
@@ -1164,11 +1243,7 @@ def run_pipeline(
         wandb.define_metric("eval_uniform/*", step_metric="eval_step")
 
         wandb.define_metric("global_step")
-        wandb.define_metric("teacher_train/*", step_metric="global_step")
-        
-
-
-
+        wandb.define_metric("teacher_train/*", step_metric="global_step") 
 
     if device == "mps":
         if B > 2:

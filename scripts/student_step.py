@@ -39,7 +39,13 @@ def _ensure_device(device):
         raise ValueError("device must be one of: cpu, mps, cuda")
 
 
-def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024): # why this function name mentions solution only? - answer: because we're only computing loss on the solution tokens, not the problem tokens. The problem tokens are part of the input prompt, but we don't want to compute loss on them since they are not the target output. The model is trained to generate the solution given the problem, so we only care about the loss on the solution tokens. The function takes a batch of examples (each with a "problem" and "solution"), tokenizes them, and builds input tensors where the loss will only be computed on the solution part of the sequence.
+def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024): 
+    # Why this function name mentions solution only? 
+    # - answer: because we're only computing loss on the solution tokens, not the problem tokens. 
+    # The problem tokens are part of the input prompt, but we don't want to compute loss on them since they are not the target output. 
+    # The model is trained to generate the solution given the problem, so we only care about the loss on the solution tokens. 
+    # The function takes a batch of examples (each with a "problem" and "solution"), tokenizes them, and builds input tensors where the loss will only be computed on the solution part of the sequence.
+    
     """
     Build tensors for Causal LM training where loss is computed only on solution tokens.
     Expects each example to have: {"problem": ..., "solution": ...}
@@ -49,6 +55,7 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     # (common trick for causal language models)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token   # means we reached the end of the sequence, so no loss is computed on padding tokens
+
 
     # Get integer IDs for padding and end-of-sequence tokens
     pad_id = tokenizer.pad_token_id
@@ -62,7 +69,6 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     clipped_counts = 0  # Track number of clipped examples
 
     # Process each example in the batch individually
-
     for ex in batch_examples:
         problem = ex["problem"]      # input text (question)
         solution = ex["solution"]    # target text (answer / reasoning)
@@ -84,7 +90,14 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
         full_ids = full_ids[:max_length] # keep only the first max_length tokens and discard the rest.
         full_labels = full_labels[:max_length]
 
-        # WHY do we need to truncate seperatly full_ids and full_labels? answer: We need to truncate full_ids and full_labels separately because they may have different values. The full_ids list contains the token IDs for the input sequence (prompt + solution), while the full_labels list contains the corresponding labels for loss computation (with -100 for prompt tokens and actual token IDs for solution tokens). When we truncate to max_length, we need to ensure that both lists are truncated in the same way so that the input tokens and their corresponding labels remain aligned. If we were to truncate them together without considering their different values, we might end up with misaligned input and label sequences, which would lead to incorrect loss computation during training.
+        # WHY do we need to truncate seperatly full_ids and full_labels? 
+        # answer: 
+            # We need to truncate full_ids and full_labels separately because they may have different values. 
+            # The full_ids list contains the token IDs for the input sequence (prompt + solution), 
+            # while the full_labels list contains the corresponding labels for loss computation (with -100 for prompt tokens and actual token IDs for solution tokens). 
+            # When we truncate to max_length, we need to ensure that both lists are truncated in the same way so that the input tokens and their corresponding labels remain aligned. 
+            # If we were to truncate them together without considering their different values, we might end up with misaligned input and label sequences, which would lead to incorrect loss computation during training.
+        
         # DIVE DEEP LATER 
 
         input_ids_list.append(torch.tensor(full_ids, dtype=torch.long))  # Store input ids
@@ -101,8 +114,13 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
         # full_labels = [-100, -100, -100, -100, 201, 202, 203, 204, 205, 206]
         # In this example, the first four tokens correspond to the prompt and are masked with -100 in the labels, while the solution tokens have their actual token IDs in the labels for loss computation.
 
-    # Determine max sequence length in this batch (for padding) - what is the goal of padding here ? answer: The goal of padding is to ensure that all sequences in the batch have the same length, which is necessary for efficient batch processing in PyTorch. Since different examples may have different lengths after tokenization, we pad the shorter sequences with a special padding token (with ID pad_id) so that they all match the length of the longest sequence in the batch. This allows us to create tensors of shape (batch_size, max_seq_length) that can be fed into the model without issues.
-
+    # Determine max sequence length in this batch (for padding) - what is the goal of padding here ? 
+    # answer: 
+        # The goal of padding is to ensure that all sequences in the batch have the same length, 
+        # which is necessary for efficient batch processing in PyTorch. 
+        # Since different examples may have different lengths after tokenization, 
+        # we pad the shorter sequences with a special padding token (with ID pad_id) so that they all match the length of the longest sequence in the batch. 
+        # This allows us to create tensors of shape (batch_size, max_seq_length) that can be fed into the model without issues.
     max_len = max(len(x) for x in input_ids_list)
     batch_size = len(input_ids_list)
 
@@ -111,7 +129,13 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     attention_mask = torch.zeros((batch_size, max_len), dtype=torch.long)
     labels = torch.full((batch_size, max_len), -100, dtype=torch.long) 
 
-    # Fill tensors with actual data, explain further this for loop: This for loop iterates over each example in the batch (using enumerate to get both the index i and the corresponding token IDs and labels). For each example, it fills the input_ids tensor with the token IDs, sets the attention_mask to 1 for real tokens (and leaves it as 0 for padding), and fills the labels tensor with the label IDs. The variable n is the length of the current example's token sequence, so we only fill up to n tokens for each example, leaving the rest as padding. This way, we create properly padded tensors that can be fed into the model for training.
+    # Fill tensors with actual data, 
+    # explain further this for loop: 
+        # This for loop iterates over each example in the batch (using enumerate to get both the index i and the corresponding token IDs and labels). 
+        # For each example, it fills the input_ids tensor with the token IDs, sets the attention_mask to 1 for real tokens (and leaves it as 0 for padding), 
+        # and fills the labels tensor with the label IDs. 
+        # The variable n is the length of the current example's token sequence, so we only fill up to n tokens for each example, 
+        # leaving the rest as padding. This way, we create properly padded tensors that can be fed into the model for training.
     for i, (ids, labs) in enumerate(zip(input_ids_list, labels_list)): # What s the difference between ids and labs here ? and what does labs stand for? answer: In this context, "ids" refers to the token IDs for the input sequence (which includes both the prompt and the solution), while "labs" refers to the label IDs that indicate which tokens should contribute to the loss (with -100 for prompt tokens and actual token IDs for solution tokens). The variable name "labs" is just a shorthand for "labels". So, for each example in the batch, "ids" contains the token IDs that will be fed into the model, and "labs" contains the corresponding labels that will be used to compute the loss during training.
         n = len(ids)
 
@@ -137,17 +161,22 @@ def build_solution_only_batch(batch_examples, tokenizer, device, max_length=1024
     # labels = [[-100, -100, -100, -100, 201, 202, 203, 204, 205, 206],
     #           [-100, -100, -100, 201, 202, -100, -100, -100, -100, -100]]
 
-    # why in theses examples labs always start with -100 ? answer: The "labs" (labels) start with -100 because the first part of the input sequence corresponds to the prompt, and we do not want to compute loss on the prompt tokens. The model is trained to generate the solution given the prompt, so we only care about the loss on the solution tokens. By setting the labels for the prompt tokens to -100, we ensure that they are ignored during loss computation, and only the solution tokens contribute to the training signal. This is a common technique when training language models on tasks where only a portion of the input should be used for computing loss.
-
+    # why in theses examples labs always start with -100 ? answer: The "labs" (labels) start with -100 because the first part of the input sequence corresponds to the prompt, 
+    # and we do not want to compute loss on the prompt tokens. The model is trained to generate the solution given the prompt, 
+    # so we only care about the loss on the solution tokens. By setting the labels for the prompt tokens to -100, 
+    # we ensure that they are ignored during loss computation, and only the solution tokens contribute to the training signal.
+    # This is a common technique when training language models on tasks where only a portion of the input should be used for computing loss.
 
     # Compute batch clipped ratio (fraction of examples clipped)
     batch_clipped_ratio = clipped_counts / batch_size if batch_size > 0 else 0.0
+   
     # Compute per-example clipped ratio (how much was clipped for each example)
     clipped_ratios = []
     for i, orig_len in enumerate(orig_lengths):
         clipped_len = min(orig_len, max_length)
         ratio = 0.0 if orig_len == 0 else max(0, orig_len - clipped_len) / orig_len
         clipped_ratios.append(ratio)
+    
     # Return tensors and clipping stats
     return input_ids.to(device), attention_mask.to(device), labels.to(device), batch_clipped_ratio, clipped_ratios
 
@@ -189,7 +218,7 @@ def student_train_step(model, tokenizer, optimizer, batch_examples, device=None,
         attention_mask=attention_mask,
         labels=labels,
     )
-
+    
 
     # Extract computed loss (cross-entropy over non-masked tokens)
     loss = outputs.loss

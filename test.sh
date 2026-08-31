@@ -2,8 +2,8 @@
 #SBATCH --job-name=test
 
 #SBATCH --chdir=/home/aya.elmir/cl_and_rl
-#SBATCH --output=/home/aya.elmir/cl_and_rl/logs/17july/%x_%j.out
-#SBATCH --error=/home/aya.elmir/cl_and_rl/logs/17july/%x_%j.err
+#SBATCH --output=/home/aya.elmir/cl_and_rl/logs/6aug/%x_%j.out
+#SBATCH --error=/home/aya.elmir/cl_and_rl/logs/6aug/%x_%j.err
 
 #SBATCH --partition=gpuhigh2
 #SBATCH --account=inception-energy-llm
@@ -561,35 +561,130 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # done
 
 
-for SEED in 11 22 33; do
-  python scripts/training_loop.py \
-    --mode full_pipeline \
-    --device cuda \
-    --seed ${SEED} \
-    --episodes 20 \
-    --steps_per_episode 20 \
-    --eval_steps 100 \
-    --batch_size 15 \
-    --val_batch_size 16 \
-    --test_batch_size 16 \
-    --max_length 512 \
-    --student_lr 1e-5 \
-    --teacher_lr 3e-3 \
-    --teacher_hidden_dim 32 \
-    --gamma 0.95 \
-    --use_advantage_baseline 1 \
-    --baseline_type mean_return \
-    --normalize_advantage 1 \
-    --lambda_cost 0.0 \
-    --alpha_stability 0.0 \
-    --wandb 1 \
-    --wandb_project cl-rl \
-    --wandb_entity CL-and-RL \
-    --wandb_run_name fp_seed${SEED}_ep20_steps20_eval100_b15_val16_len512_tlr3e-3
-done
+# for SEED in 11 22 33; do
+#   python scripts/training_loop.py \
+#     --mode full_pipeline \
+#     --device cuda \
+#     --seed ${SEED} \
+#     --episodes 20 \
+#     --steps_per_episode 20 \
+#     --eval_steps 100 \
+#     --batch_size 15 \
+#     --val_batch_size 16 \
+#     --test_batch_size 16 \
+#     --max_length 512 \
+#     --student_lr 1e-5 \
+#     --teacher_lr 3e-3 \
+#     --teacher_hidden_dim 32 \
+#     --gamma 0.95 \
+#     --use_advantage_baseline 1 \
+#     --baseline_type mean_return \
+#     --normalize_advantage 1 \
+#     --lambda_cost 0.0 \
+#     --alpha_stability 0.0 \
+#     --wandb 1 \
+#     --wandb_project cl-rl \
+#     --wandb_entity CL-and-RL \
+#     --wandb_run_name fp_seed${SEED}_ep20_steps20_eval100_b15_val16_len512_tlr3e-3
+# done
 
 
-# add de date of the current day l fou9 
+## 10 ep. 40 steps: It has the same 400 student updates as 20×20, but only 10 teacher updates. 
+# Comparing them would reveal whether improvement comes from more frequent teacher updates or longer trajectories. 
+# This is lower priority than the fixed-mixture baseline and quantitative metrics.
 
-# suggestion de Kirill 
-  # call it reinforce with a baseline  
+
+# for SEED in 11 22 33; do
+#   python scripts/training_loop.py \
+#     --mode full_pipeline \
+#     --device cuda \
+#     --seed ${SEED} \
+#     --episodes 10 \
+#     --steps_per_episode 40 \
+#     --eval_steps 100 \
+#     --batch_size 15 \
+#     --val_batch_size 16 \
+#     --test_batch_size 16 \
+#     --max_length 512 \
+#     --student_lr 1e-5 \
+#     --teacher_lr 3e-3 \
+#     --teacher_hidden_dim 32 \
+#     --gamma 0.95 \
+#     --use_advantage_baseline 1 \
+#     --baseline_type mean_return \
+#     --normalize_advantage 1 \
+#     --lambda_cost 0.0 \
+#     --alpha_stability 0.0 \
+#     --wandb 1 \
+#     --wandb_project cl-rl \
+#     --wandb_entity CL-and-RL \
+#     --wandb_run_name fp_seed${SEED}_ep10_steps40_eval100_b15_val16_len512_tlr3e-3
+# done
+
+
+# Quantify the existing five-seed result
+
+# for SEED in 11 22 33 44 55; do
+#   python scripts/training_loop.py \
+#     --mode full_pipeline \
+#     --device cuda \
+#     --seed ${SEED} \
+#     --episodes 10 \
+#     --steps_per_episode 20 \
+#     --eval_steps 100 \
+#     --batch_size 15 \
+#     --val_batch_size 16 \
+#     --test_batch_size 16 \
+#     --max_length 512 \
+#     --student_lr 1e-5 \
+#     --teacher_lr 3e-3 \
+#     --teacher_hidden_dim 32 \
+#     --gamma 0.95 \
+#     --use_advantage_baseline 1 \
+#     --baseline_type mean_return \
+#     --normalize_advantage 1 \
+#     --lambda_cost 0.0 \
+#     --alpha_stability 0.0 \
+#     --wandb 1 \
+#     --wandb_project cl-rl \
+#     --wandb_entity CL-and-RL \
+#     --wandb_run_name fp_seed${SEED}_ep10_steps20_eval100_b15_val16_len512_tlr3e-3
+# done
+
+
+# KEY REMINDERS BEFORE YOU RUN: 
+  # add de date of the current day l fou9 
+
+
+
+################## MAKING SURE UNIFORM WORKS AS EXPECTED BE3DA #######################
+
+
+python scripts/training_loop.py \
+  --mode eval_uniform \
+  --device cuda \
+  --seed 22 \
+  --episodes 1 \
+  --steps_per_episode 175 \
+  --eval_steps 175 \
+  --batch_size 8 \
+  --val_batch_size 32 \
+  --test_batch_size 16 \
+  --max_length 512 \
+  --student_lr 1e-5 \
+  --teacher_lr 3e-3 \
+  --teacher_hidden_dim 32 \
+  --gamma 0.95 \
+  --use_advantage_baseline 1 \
+  --baseline_type mean_return \
+  --normalize_advantage 1 \
+  --lambda_cost 0.0 \
+  --alpha_stability 0.0 \
+  --wandb 1 \
+  --wandb_project cl-rl \
+  --wandb_entity CL-and-RL \
+  --wandb_run_name fp_seed22_ep1_steps20_eval100_b64_val128_len512_tlr3e-3
+
+  # main changes made => to add to wandb 
+    # val_batch_size 128 \  -> made larger so less noisy 
+    # fixed val batch through all steps of an ep. 

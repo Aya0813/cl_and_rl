@@ -57,7 +57,6 @@ def prepare_math_dataset(
         D_tr = first["train"]
         D_val = second["train"]
         D_holdout = second["test"]
-    
 
 
     # To know whether the statification happened or NOT
