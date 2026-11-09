@@ -1,5 +1,7 @@
 # CL + RL
 
+News: Research accepted for poster presentation at a NeurIPS 2026 workshop.
+
 Small curriculum-learning experiment for math data with a trainable RL teacher:
 - Student model: `Qwen/Qwen3.5-0.8B`
 - Teacher policy: REINFORCE over bucket-sampling distributions
